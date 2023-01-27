@@ -36,3 +36,7 @@ test_gramma/
 
 # MacOS
 .DS_Store
+
+
+# data:
+Alpro_weights/
