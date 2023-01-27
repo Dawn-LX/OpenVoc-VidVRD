@@ -12,10 +12,9 @@ import pickle
 import torch
 
 
+from models.TrajClsModel_v2 import OpenVocTrajCls as OpenVocTrajCls_NoBgEmb
 
-from models.TrajClsModel import OpenVocTrajCls
-
-from models.RelationClsModel_v3 import AlproVisual_with_FixedPrompt,VidVRDII_FixedPrompt
+from models.RelationClsModel_v3 import AlproVisual_with_FixedPrompt
 
 
 from dataloaders.dataset_vidvrd_v2 import VidVRDUnifiedDataset,VidVRDUnifiedDataset_GIoU
@@ -31,16 +30,6 @@ def load_json(path):
     return x
 
 
-def modify_state_dict(state_dict):
-    # NOTE This function is temporary
-    
-    text_embeddings = state_dict.pop("text_embeddings") # (36,dim_emb)
-    background_emb = state_dict.pop("background_emb")  # (dim_emb,)
-    class_embeddings = torch.cat((background_emb[None,:],text_embeddings[1:,:]),dim=0)
-
-    state_dict.update({"class_embeddings":class_embeddings})
-
-    return state_dict
 
 
 def eval_relation(
@@ -84,12 +73,11 @@ def eval_relation(
     
 
 
-    model_traj = OpenVocTrajCls(model_traj_cfg,is_train=False)
+    model_traj = OpenVocTrajCls_NoBgEmb(model_traj_cfg,is_train=False)
     LOGGER.info(f"loading check point from {args.ckpt_path_traj}")
     check_point = torch.load(args.ckpt_path_traj,map_location=torch.device('cpu'))
     state_dict = check_point["model_state_dict"]
     model_traj = model_traj.to(device)
-    state_dict = modify_state_dict(state_dict)
     model_traj.load_state_dict(state_dict)
     model_traj.eval()
     model_traj.reset_classifier_weights(args.classifier_split_traj)
@@ -350,12 +338,11 @@ def eval_relation_for_AlproVisual_wo_train(
     LOGGER.info("evaluate config: {}".format(eval_cfg))
 
 
-    model_traj = OpenVocTrajCls(model_traj_cfg,is_train=False)
+    model_traj = OpenVocTrajCls_NoBgEmb(model_traj_cfg,is_train=False)
     LOGGER.info(f"loading check point from {args.ckpt_path_traj}")
     check_point = torch.load(args.ckpt_path_traj,map_location=torch.device('cpu'))
     state_dict = check_point["model_state_dict"]
     model_traj = model_traj.to(device)
-    state_dict = modify_state_dict(state_dict)
     model_traj.load_state_dict(state_dict)
     model_traj.eval()
     model_traj.reset_classifier_weights(args.classifier_split_traj)
@@ -733,8 +720,8 @@ if __name__ == "__main__":
         for eval_type in ["PredCls","SGCls","SGDet"]:
             args.eval_type = eval_type
 
-            eval_relation(model_class,dataset_class,args)
-            # eval_relation_for_AlproVisual_wo_train(AlproVisual_with_FixedPrompt,dataset_class,args)
+            # eval_relation(model_class,dataset_class,args)
+            eval_relation_for_AlproVisual_wo_train(AlproVisual_with_FixedPrompt,dataset_class,args)
     else:
         assert args.eval_type in ["PredCls","SGCls","SGDet"]
         args.save_tag = args.save_tag + "-" + args.eval_type
@@ -747,32 +734,18 @@ if __name__ == "__main__":
 
     '''
     export 
-    #################### Table-3 ########################
-
     ### Table-3 (ALPro) AlproVisual_with_FixedPrompt
-    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=1 python tools/eval_relation_cls.py \
+    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=3 python tools/eval_relation_cls_cameraReady.py \
         --pred_cls_split_info_path configs/VidVRD_pred_class_spilt_info_v2.json \
         --model_class AlproVisual_with_FixedPrompt  \
         --dataset_class VidVRDUnifiedDataset \
-        --cfg_path experiments/RelationCls_VidVRD/vanilla_ALPro_inference_only/cfg_fixed_prompt.py \
-        --ckpt_path_traj /home/gkf/project/VidVRD-OpenVoc/experiments/ALPro_teacher/model_OpenVoc_w15BS128_epoch_50.pth \
+        --cfg_path experiments/RelationCls_VidVRD/vanilla_ALPro_inference_only/cfg_fixed_prompt_cameraready.py \
+        --ckpt_path_traj /home/gkf/project/VidVRD-OpenVoc/experiments_vidvrd_trajcls/OpenVocTrajCls_NoBgEmb/model_final_with_distil_w5bs128_epoch_50.pth \
         --output_dir experiments/RelationCls_VidVRD/vanilla_ALPro_inference_only \
         --target_split_traj all \
-        --target_split_pred all \
-        --save_tag TaPa
-    
-    ### Table-3 (VidVRDII) VidVRDII_FixedPrompt
-    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=3 python tools/eval_relation_cls.py \
-        --pred_cls_split_info_path configs/VidVRD_pred_class_spilt_info_v2.json \
-        --model_class VidVRDII_FixedPrompt  \
-        --dataset_class VidVRDUnifiedDataset \
-        --cfg_path  experiments/RelationCls_VidVRD/VidVRD_II/cfg_fixedSingle.py \
-        --ckpt_path_traj /home/gkf/project/VidVRD-OpenVoc/experiments/ALPro_teacher/model_OpenVoc_w15BS128_epoch_50.pth \
-        --ckpt_path_pred  /home/gkf/project/VidVRD-OpenVoc/experiments_RelationCls/_exp_models_v3_TrajBasePredBase/VidVRDII_FixedPrompt/cfg_fixedSingle/model_bsz32_best_mAP.pth \
-        --output_dir  experiments/RelationCls_VidVRD/VidVRD_II \
-        --target_split_traj all \
         --target_split_pred novel \
-        --save_tag TaPn
+        --save_tag TaPn_CameraReady
+    
     
     
     
