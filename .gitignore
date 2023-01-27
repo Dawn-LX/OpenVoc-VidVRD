@@ -5,6 +5,7 @@ _ext
 *.so
 
 # pytorch/python/numpy formats
+*.pt
 *.pth
 *.pkl
 *.npy
