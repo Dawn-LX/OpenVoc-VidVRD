@@ -9,6 +9,7 @@ _ext
 *.pkl
 *.npy
 *.json
+*.zip
 
 # log files & tensorboard logs
 *.log
