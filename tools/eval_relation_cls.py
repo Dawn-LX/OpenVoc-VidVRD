@@ -644,9 +644,9 @@ def _eval_relation_detection_openvoc(
     pred_categories = set([c for c in pred_categories if c != "__background__"])
 
     if args.segment_eval:
-        gt_relations = load_json("/home/gkf/project/VidVRD-OpenVoc/datasets/gt_jsons/VidVRDtest_segment_gts.json")
+        gt_relations = load_json(args.segment_gt_json)
     else:
-        gt_relations = load_json("/home/gkf/project/VidVRD-OpenVoc/datasets/gt_jsons/VidVRDtest_gts.json")
+        gt_relations = load_json(args.gt_json)
 
     gt_relations_ = defaultdict(list)
     for vsig,relations in gt_relations.items(): # same format as prediction results json, refer to `VidVRDhelperEvalAPIs/README.md`
@@ -694,10 +694,12 @@ if __name__ == "__main__":
     parser.add_argument("--target_split_pred", type=str,default="novel",help="...")    
     parser.add_argument("--save_tag", type=str,default="",help="...")
     parser.add_argument("--generalized_setting", action="store_true",default=False,help="...")
+    parser.add_argument("--ALpro", action="store_true",default=False,help="...")
     parser.add_argument("--eval_type", type=str)
     parser.add_argument("--asso_n_workers", type=int,default=8)
-    
 
+    parser.add_argument("--gt_json", type=str,default="datasets/gt_jsons/VidVRDtest_gts.json",help="...")    
+    parser.add_argument("--segment_gt_json", type=str,default="datasets/gt_jsons/VidVRDtest_segment_gts.json",help="...")
     
      
     parser.add_argument("--json_results_path", type=str,help="...")
@@ -733,15 +735,20 @@ if __name__ == "__main__":
         for eval_type in ["PredCls","SGCls","SGDet"]:
             args.eval_type = eval_type
 
-            eval_relation(model_class,dataset_class,args)
-            # eval_relation_for_AlproVisual_wo_train(AlproVisual_with_FixedPrompt,dataset_class,args)
+            if args.ALpro:
+                eval_relation_for_AlproVisual_wo_train(AlproVisual_with_FixedPrompt,dataset_class,args)
+            else:
+                eval_relation(model_class,dataset_class,args)
     else:
         assert args.eval_type in ["PredCls","SGCls","SGDet"]
         args.save_tag = args.save_tag + "-" + args.eval_type
         if args.segment_eval:
             args.save_tag = args.save_tag + "_SegEval"
         
-        eval_relation(model_class,dataset_class,args)
+        if args.ALpro:
+                eval_relation_for_AlproVisual_wo_train(AlproVisual_with_FixedPrompt,dataset_class,args)
+        else:
+            eval_relation(model_class,dataset_class,args)
 
     
 
@@ -750,30 +757,30 @@ if __name__ == "__main__":
     #################### Table-3 ########################
 
     ### Table-3 (ALPro) AlproVisual_with_FixedPrompt
-    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=1 python tools/eval_relation_cls.py \
+    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=0 python tools/eval_relation_cls.py \
+        --ALpro \
         --pred_cls_split_info_path configs/VidVRD_pred_class_spilt_info_v2.json \
         --model_class AlproVisual_with_FixedPrompt  \
         --dataset_class VidVRDUnifiedDataset \
         --cfg_path experiments/RelationCls_VidVRD/vanilla_ALPro_inference_only/cfg_fixed_prompt.py \
-        --ckpt_path_traj /home/gkf/project/VidVRD-OpenVoc/experiments/ALPro_teacher/model_OpenVoc_w15BS128_epoch_50.pth \
+        --ckpt_path_traj experiments/old_TrajCls_weights/model_OpenVoc_w15BS128_epoch_50.pth \
         --output_dir experiments/RelationCls_VidVRD/vanilla_ALPro_inference_only \
         --target_split_traj all \
         --target_split_pred all \
         --save_tag TaPa
     
     ### Table-3 (VidVRDII) VidVRDII_FixedPrompt
-    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=3 python tools/eval_relation_cls.py \
+    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=2 python tools/eval_relation_cls.py \
         --pred_cls_split_info_path configs/VidVRD_pred_class_spilt_info_v2.json \
         --model_class VidVRDII_FixedPrompt  \
         --dataset_class VidVRDUnifiedDataset \
         --cfg_path  experiments/RelationCls_VidVRD/VidVRD_II/cfg_fixedSingle.py \
-        --ckpt_path_traj /home/gkf/project/VidVRD-OpenVoc/experiments/ALPro_teacher/model_OpenVoc_w15BS128_epoch_50.pth \
-        --ckpt_path_pred  /home/gkf/project/VidVRD-OpenVoc/experiments_RelationCls/_exp_models_v3_TrajBasePredBase/VidVRDII_FixedPrompt/cfg_fixedSingle/model_bsz32_best_mAP.pth \
+        --ckpt_path_traj experiments/old_TrajCls_weights/model_OpenVoc_w15BS128_epoch_50.pth \
+        --ckpt_path_pred  experiments/RelationCls_VidVRD/VidVRD_II/model_bsz32_best_mAP.pth \
         --output_dir  experiments/RelationCls_VidVRD/VidVRD_II \
         --target_split_traj all \
         --target_split_pred novel \
         --save_tag TaPn
-    
     
     
     '''

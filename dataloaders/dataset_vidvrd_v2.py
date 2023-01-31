@@ -109,6 +109,8 @@ class VidVRDUnifiedDataset(object):
         self.vpoi_th = vpoi_th
         self.gt_training_traj_supp = False
         self.cache_tag = cache_tag
+        if not os.path.exists(self.cache_dir):
+            os.makedirs(cache_dir)
         
         self.segment_tags = self.prepare_segment_tags()  # len == 15146 for vidvrd-train
         self.video_annos = self.load_video_annos()

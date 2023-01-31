@@ -14,7 +14,18 @@ import torch
 
 from models.TrajClsModel_v2 import OpenVocTrajCls as OpenVocTrajCls_NoBgEmb
 
-from models.RelationClsModel_v3 import AlproVisual_with_FixedPrompt
+from models.RelationClsModel_v3 import AlproVisual_with_FixedPrompt     # Table-3 ALpro
+from models.RelationClsModel_v3 import VidVRDII_FixedPrompt             # Table-3 VidVRD-II
+from models.RelationClsModel_v3 import OpenVocRelCls_LearnablePrompt    # Table-3 RePro^\dagger
+from models.RelationClsModel_v3 import OpenVocRelCls_stage2_Grouped     # Table-3 RePro
+from models.RelationClsModel_v3 import OpenVocRelCls_stage2_Single      # Table-4 Repro w/o Comp. & w/o Motion
+from models.RelationClsModel_v3 import OpenVocRelCls_stage2             # Table-4 Repro w Comp. & w/o Motion
+from models.RelationClsModel_v3 import OpenVocRelCls_stage2_MeanEnsemble    # Table-4 Repro w Comp. & Ens
+from models.RelationClsModel_v3 import OpenVocRelCls_stage2_GroupedRandom   # Table-4 Repro w Comp. & Rand
+
+
+
+
 
 
 from dataloaders.dataset_vidvrd_v2 import VidVRDUnifiedDataset,VidVRDUnifiedDataset_GIoU
@@ -631,9 +642,9 @@ def _eval_relation_detection_openvoc(
     pred_categories = set([c for c in pred_categories if c != "__background__"])
 
     if args.segment_eval:
-        gt_relations = load_json("/home/gkf/project/VidVRD-OpenVoc/datasets/gt_jsons/VidVRDtest_segment_gts.json")
+        gt_relations = load_json(args.segment_gt_json)
     else:
-        gt_relations = load_json("/home/gkf/project/VidVRD-OpenVoc/datasets/gt_jsons/VidVRDtest_gts.json")
+        gt_relations = load_json(args.gt_json)
 
     gt_relations_ = defaultdict(list)
     for vsig,relations in gt_relations.items(): # same format as prediction results json, refer to `VidVRDhelperEvalAPIs/README.md`
@@ -667,7 +678,7 @@ if __name__ == "__main__":
     
     parser.add_argument("--cfg_path", type=str,help="...")
     parser.add_argument("--ckpt_path", type=str,help="...")
-    parser.add_argument("--ckpt_path_traj", type=str,help="...")
+    parser.add_argument("--ckpt_path_traj", type=str,default="experiments/TrajCls_VidVRD/NoBgEmb/model_final_with_distil_w5bs128_epoch_50.pth")
     parser.add_argument("--ckpt_path_pred", type=str,help="...")
     parser.add_argument("--enti_cls_split_info_path", type=str,default="configs/VidVRD_class_spilt_info.json")
     parser.add_argument("--pred_cls_split_info_path", type=str,default="configs/VidVRD_pred_class_spilt_info_v2.json")
@@ -681,8 +692,12 @@ if __name__ == "__main__":
     parser.add_argument("--target_split_pred", type=str,default="novel",help="...")    
     parser.add_argument("--save_tag", type=str,default="",help="...")
     parser.add_argument("--generalized_setting", action="store_true",default=False,help="...")
+    parser.add_argument("--ALpro", action="store_true",default=False,help="...")
     parser.add_argument("--eval_type", type=str)
     parser.add_argument("--asso_n_workers", type=int,default=8)
+
+    parser.add_argument("--gt_json", type=str,default="datasets/gt_jsons/VidVRDtest_gts.json",help="...")
+    parser.add_argument("--segment_gt_json", type=str,default="datasets/gt_jsons/VidVRDtest_segment_gts.json",help="...")
     
 
     
@@ -720,34 +735,131 @@ if __name__ == "__main__":
         for eval_type in ["PredCls","SGCls","SGDet"]:
             args.eval_type = eval_type
 
-            # eval_relation(model_class,dataset_class,args)
-            eval_relation_for_AlproVisual_wo_train(AlproVisual_with_FixedPrompt,dataset_class,args)
+            if args.ALpro:
+                eval_relation_for_AlproVisual_wo_train(AlproVisual_with_FixedPrompt,dataset_class,args)
+            else:
+                eval_relation(model_class,dataset_class,args)
+
     else:
         assert args.eval_type in ["PredCls","SGCls","SGDet"]
         args.save_tag = args.save_tag + "-" + args.eval_type
         if args.segment_eval:
             args.save_tag = args.save_tag + "_SegEval"
         
-        eval_relation(model_class,dataset_class,args)
+        if args.ALpro:
+            eval_relation_for_AlproVisual_wo_train(AlproVisual_with_FixedPrompt,dataset_class,args)
+        else:
+            eval_relation(model_class,dataset_class,args)
 
     
 
     '''
     export 
+    ################################ Table-3 ######################################
     ### Table-3 (ALPro) AlproVisual_with_FixedPrompt
     TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=3 python tools/eval_relation_cls_cameraReady.py \
+        --ALpro \
         --pred_cls_split_info_path configs/VidVRD_pred_class_spilt_info_v2.json \
         --model_class AlproVisual_with_FixedPrompt  \
         --dataset_class VidVRDUnifiedDataset \
         --cfg_path experiments/RelationCls_VidVRD/vanilla_ALPro_inference_only/cfg_fixed_prompt_cameraready.py \
-        --ckpt_path_traj /home/gkf/project/VidVRD-OpenVoc/experiments_vidvrd_trajcls/OpenVocTrajCls_NoBgEmb/model_final_with_distil_w5bs128_epoch_50.pth \
         --output_dir experiments/RelationCls_VidVRD/vanilla_ALPro_inference_only \
         --target_split_traj all \
         --target_split_pred novel \
         --save_tag TaPn_CameraReady
     
+    ### Table-3 (VidVRDII) VidVRDII_FixedPrompt
+    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=0 python tools/eval_relation_cls_cameraReady.py \
+        --pred_cls_split_info_path configs/VidVRD_pred_class_spilt_info_v2.json \
+        --model_class VidVRDII_FixedPrompt  \
+        --dataset_class VidVRDUnifiedDataset \
+        --cfg_path  experiments/RelationCls_VidVRD/VidVRD_II/cfg_fixedSingle_cr.py \
+        --ckpt_path_pred  experiments/RelationCls_VidVRD/VidVRD_II/model_bsz32_best_mAP.pth \
+        --output_dir  experiments/RelationCls_VidVRD/VidVRD_II \
+        --target_split_traj all \
+        --target_split_pred all \
+        --save_tag TaPa_CR
+    
+    ###  Table-3 (RePro*) OpenVocRelCls_LearnablePrompt
+    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=2 python tools/eval_relation_cls_cameraReady.py \
+        --pred_cls_split_info_path configs/VidVRD_pred_class_spilt_info_v2.json \
+        --model_class OpenVocRelCls_LearnablePrompt  \
+        --dataset_class VidVRDUnifiedDataset \
+        --cfg_path experiments/RelationCls_VidVRD/RePro_unified_training/cfg_cr.py \
+        --ckpt_path_pred experiments/RelationCls_VidVRD/RePro_unified_training/model_bsz32_best_mAP_epoch-37.pth \
+        --output_dir experiments/RelationCls_VidVRD/RePro_unified_training \
+        --target_split_traj all \
+        --target_split_pred all \
+        --save_tag TaPa_CR_
+    
+
+    
+    ###  Table-3 (RePro) OpenVocRelCls_stage2_Grouped
+    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=1 python tools/eval_relation_cls_cameraReady.py \
+        --pred_cls_split_info_path configs/VidVRD_pred_class_spilt_info_v2.json \
+        --model_class OpenVocRelCls_stage2_Grouped  \
+        --dataset_class VidVRDUnifiedDataset_GIoU \
+        --cfg_path  experiments/RelationCls_VidVRD/RePro/stage2/cfg_cr.py \
+        --ckpt_path_pred experiments/RelationCls_VidVRD/RePro/stage2/model_bsz32_best_mAP_epoch-17.pth \
+        --output_dir experiments/RelationCls_VidVRD/RePro/stage2/ \
+        --target_split_traj all \
+        --target_split_pred novel \
+        --save_tag TaPn_CR_
+    
+
+    ################################ Table-4 ######################################
+
+    ###  Table-4 (#1 w/o C, w/o M) OpenVocRelCls_stage2_Single    
+    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=2 python tools/eval_relation_cls_cameraReady.py \
+        --pred_cls_split_info_path configs/VidVRD_pred_class_spilt_info_v2.json \
+        --model_class OpenVocRelCls_stage2_Single  \
+        --dataset_class VidVRDUnifiedDataset \
+        --cfg_path  experiments/RelationCls_VidVRD/ablation_1/stage2/cfg_.py \
+        --ckpt_path_pred experiments/RelationCls_VidVRD/ablation_1/stage2/model_bsz32_best_mAPEP26.pth  \
+        --output_dir experiments/RelationCls_VidVRD/ablation_1/stage2 \
+        --target_split_traj all \
+        --target_split_pred all \
+        --save_tag TaPa_CR_
+    
+    ###  Table-4 (#2 w C, w/o M) OpenVocRelCls_stage2    
+    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=2 python tools/eval_relation_cls_cameraReady.py \
+        --pred_cls_split_info_path configs/VidVRD_pred_class_spilt_info_v2.json \
+        --model_class OpenVocRelCls_stage2  \
+        --dataset_class VidVRDUnifiedDataset \
+        --cfg_path   experiments/RelationCls_VidVRD/ablation_2/stage2/cfg_.py \
+        --ckpt_path_pred  experiments/RelationCls_VidVRD/ablation_2/stage2/model_bsz32_best_mAP_epoch-19.pth  \
+        --output_dir experiments/RelationCls_VidVRD/ablation_2/stage2 \
+        --target_split_traj all \
+        --target_split_pred novel \
+        --save_tag TaPn_CR_
+
+
+    
+    ###  Table-4 (#3 Ens)   OpenVocRelCls_stage2_MeanEnsemble
+    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=1 python tools/eval_relation_cls_cameraReady.py \
+        --pred_cls_split_info_path configs/VidVRD_pred_class_spilt_info_v2.json \
+        --model_class OpenVocRelCls_stage2_MeanEnsemble  \
+        --dataset_class VidVRDUnifiedDataset \
+        --cfg_path    experiments/RelationCls_VidVRD/ablation_3_4/stage2/cfg_.py \
+        --ckpt_path_pred   experiments/RelationCls_VidVRD/ablation_3_4/stage2/model_bsz32_best_mAP.pth  \
+        --output_dir experiments/RelationCls_VidVRD/ablation_3_4/stage2 \
+        --target_split_traj all \
+        --target_split_pred all \
+        --save_tag TaPa_CR_Ens_
+    
+    ###  Table-4 (#3 Ens)   OpenVocRelCls_stage2_GroupedRandom
+    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=3 python tools/eval_relation_cls_cameraReady.py \
+        --pred_cls_split_info_path configs/VidVRD_pred_class_spilt_info_v2.json \
+        --model_class OpenVocRelCls_stage2_GroupedRandom  \
+        --dataset_class VidVRDUnifiedDataset_GIoU \
+        --cfg_path    experiments/RelationCls_VidVRD/ablation_3_4/stage2/cfg_.py \
+        --ckpt_path_pred   experiments/RelationCls_VidVRD/ablation_3_4/stage2/model_bsz32_best_mAP.pth  \
+        --output_dir experiments/RelationCls_VidVRD/ablation_3_4/stage2 \
+        --target_split_traj all \
+        --target_split_pred all \
+        --save_tag TaPa_CR_Rand_
     
     
-    
+
     '''
     

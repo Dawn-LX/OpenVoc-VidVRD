@@ -8,5 +8,5 @@ video_retrieval_configs = {'debug': False, 'data_ratio': 1.0, 'model_config': 'A
 video_retrieval_configs = EasyDict(video_retrieval_configs) 
 
 video_retrieval_configs.update({
-    'e2e_weights_path': '/home/gkf/project/ALPRO/output/pretrain/alpro_pretrained_ckpt.pt'
+    'e2e_weights_path': 'Alpro_weights/alpro_pretrained_ckpt.pt'
 })

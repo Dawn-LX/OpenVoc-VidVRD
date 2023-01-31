@@ -1,7 +1,6 @@
 # import warnings
 import json
 import numpy as np
-import cv2
 import torch
 import torch.nn.functional as F
 import logging
@@ -269,35 +268,6 @@ def average_to_fixed_length(visual_input,num_sample_clips):
             new_visual_input.append(visual_input[s_idx])
     new_visual_input = torch.stack(new_visual_input, dim=0)
     return new_visual_input
-
-def VidRead2ImgNpLits(video_path):
-    img_list = []
-    cap = cv2.VideoCapture(video_path)  ##打开视频文件
-    n_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    success = True
-    count = 0
-    while success and count < n_frames:
-        success, image = cap.read()
-        if success:
-            img_list.append(image)  # shape == (H,W,3)
-            count+=1
-    
-    return img_list
-
-def VidRead2ImgTensorLits(video_path):
-    img_list = []
-    cap = cv2.VideoCapture(video_path)  ##打开视频文件
-    n_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    success = True
-    count = 0
-    while success and count < n_frames:
-        success, image = cap.read()
-        if success:
-            image = torch.from_numpy(image).permute(2,0,1).float() # shape == (H,W,3) --> (3,H,W)
-            img_list.append(image)  
-            count+=1
-    
-    return img_list
 
 def create_logger(filename='train.log',filemode='a',fmt='%(asctime)s - %(message)s', level=logging.DEBUG):
     """

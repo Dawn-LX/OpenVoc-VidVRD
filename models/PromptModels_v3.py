@@ -1,5 +1,6 @@
 # import root_path
 import math
+import os
 import numpy as np
 import torch
 import torch.nn as nn
@@ -10,6 +11,11 @@ from utils.utils_func import load_json,trajid2pairid,sigmoid_focal_loss,unique_w
 from Alpro_modeling.timesformer.helpers import resize_spatial_embedding, resize_temporal_embedding
 from Alpro_modeling.alpro_models import AlproBaseModel
 from Alpro_config_release.default_alpro_configs import video_retrieval_configs as GeneralAlproCfg
+
+BERT_WEIGHT_DIR = "Alpro_weights/ext/bert-base-uncased"
+if not os.path.exists(BERT_WEIGHT_DIR):
+    BERT_WEIGHT_DIR = "bert-base-uncased" # then the wight will be automatically download by the API
+
 
 
 def load_state_dict_with_pos_embed_resizing(model, loaded_state_dict_or_path, 
@@ -227,7 +233,7 @@ class FixedPromptEmbdGenerator(object):
         token_strs = [prompt_template.format(name) for name in self.cls_names] # including __background__
         assert all([len(x.split(" ")) <= self.max_txt_len for x in token_strs])
 
-        tokenizer = BertTokenizerFast.from_pretrained("/home/gkf/project/ALPRO/ext/bert-base-uncased")
+        tokenizer = BertTokenizerFast.from_pretrained(BERT_WEIGHT_DIR)
         batch_enc = tokenizer.batch_encode_plus(
             token_strs,  # bsz= n_cls
             max_length= self.max_txt_len,  # default: 40
@@ -273,7 +279,7 @@ class PromptLearner(nn.Module):
         place_holder_strs = " ".join(["X"] * self.n_ctx)
         token_strs = [place_holder_strs + " " + name for name in cls_names] # including __background__
 
-        tokenizer = BertTokenizerFast.from_pretrained("/home/gkf/project/ALPRO/ext/bert-base-uncased")
+        tokenizer = BertTokenizerFast.from_pretrained(BERT_WEIGHT_DIR)
         batch_enc = tokenizer.batch_encode_plus(
             token_strs,  # bsz= n_cls
             max_length= self.max_txt_len,  # default: 40
@@ -622,7 +628,7 @@ class PromptLearner_Conditional(nn.Module):
         place_holder_strs = " ".join(["X"] * self.n_ctx)
         token_strs = [place_holder_strs + " " + name for name in cls_names] # including __background__
 
-        tokenizer = BertTokenizerFast.from_pretrained("/home/gkf/project/ALPRO/ext/bert-base-uncased")
+        tokenizer = BertTokenizerFast.from_pretrained(BERT_WEIGHT_DIR)
         batch_enc = tokenizer.batch_encode_plus(
             token_strs,  # bsz= n_cls
             max_length= self.max_txt_len,  # default: 40
@@ -777,7 +783,7 @@ class PromptLearner_Conditional_v2(nn.Module):
         place_holder_strs = " ".join(["X"] * self.n_ctx)
         token_strs = [place_holder_strs + " " + name for name in cls_names] # including __background__
 
-        tokenizer = BertTokenizerFast.from_pretrained("/home/gkf/project/ALPRO/ext/bert-base-uncased")
+        tokenizer = BertTokenizerFast.from_pretrained(BERT_WEIGHT_DIR)
         batch_enc = tokenizer.batch_encode_plus(
             token_strs,  # bsz= n_cls
             max_length= self.max_txt_len,  # default: 40
@@ -1575,7 +1581,7 @@ class PromptLearner_Single(nn.Module):
         place_holder_strs = " ".join(["X"] * self.n_ctx)
         token_strs = [place_holder_strs + " " + name for name in cls_names] # including __background__
 
-        tokenizer = BertTokenizerFast.from_pretrained("/home/gkf/project/ALPRO/ext/bert-base-uncased")
+        tokenizer = BertTokenizerFast.from_pretrained(BERT_WEIGHT_DIR)
         batch_enc = tokenizer.batch_encode_plus(
             token_strs,  # bsz= n_cls
             max_length= self.max_txt_len,  # default: 40

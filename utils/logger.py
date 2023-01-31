@@ -12,3 +12,4 @@ def add_log_to_file(log_path):
     formatter = logging.Formatter(_LOG_FMT, datefmt=_DATE_FMT)
     fh.setFormatter(formatter)
     LOGGER.addHandler(fh)
+    LOGGER.info("-="*20)

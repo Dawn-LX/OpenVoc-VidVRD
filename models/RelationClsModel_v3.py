@@ -720,8 +720,8 @@ class OpenVocRelCls_stage2(nn.Module):
         self.temperature = nn.Parameter(torch.ones([]) * self.temp_init)   
 
         self.relpos2embd = prompter.relpos2embd  # fix this 
-        # for p in self.relpos2embd.parameters():
-        #     p.requires_grad = False
+        for p in self.relpos2embd.parameters():
+            p.requires_grad = False
         
     
     def split_classifier_weights(self,split):
@@ -920,8 +920,8 @@ class OpenVocRelCls_stage2_Grouped(nn.Module):
         self.temperature = nn.Parameter(torch.ones([]) * self.temp_init)   
 
         self.relpos2embd = prompter.relpos2embd  # fix this 
-        # for p in self.relpos2embd.parameters():
-        #     p.requires_grad = False
+        for p in self.relpos2embd.parameters():
+            p.requires_grad = False
         
     
     def get_giou_tags(self,rel_gious,giou_th):
@@ -1195,12 +1195,6 @@ class OpenVocRelCls_stage2_Grouped(nn.Module):
 
 
 class OpenVocRelCls_stage2_GroupedRandom(OpenVocRelCls_stage2_Grouped):
-    def __init__(self, configs, is_train=True, train_on_gt_only=False):
-        super().__init__(configs, is_train, train_on_gt_only)
-
-        ### experiments_RelationCls/_exp_models_v3_TrajBasePredBase/OpenVocRelCls_stage2_Grouped/cfg_ctx10_stage1RandomEP48 is LearnPos2emb
-        for p in self.relpos2embd.parameters():
-            p.requires_grad = False
 
     def get_giou_tags(self,rel_gious,giou_th):
     
@@ -1253,8 +1247,8 @@ class OpenVocRelCls_stage2_MeanEnsemble(OpenVocRelCls_stage2):
         self.temperature = nn.Parameter(torch.ones([]) * self.temp_init)   
 
         self.relpos2embd = prompter.relpos2embd  # fix this 
-        # for p in self.relpos2embd.parameters():
-        #     p.requires_grad = False
+        for p in self.relpos2embd.parameters():
+            p.requires_grad = False
 
 
 
