@@ -14,12 +14,13 @@ model_traj_cfg = dict(
     dim_roi = 2048,  # bbox roi feature, refer to Faster-RCNN
     dim_emb = 256,
     dim_hidden = 1024,
-    vIoU_th = 0.5,
     num_base = 25,
     num_novel = 10,
-    text_emb_path = "data0/ALPRO/extract_features_output/vidvrd_ObjTextEmbeddings.npy",
+    text_emb_path = "data0/VidVRD-OpenVoc/prepared_data/vidvrd_ObjTextEmbeddings.pth",
+    temperature_init = 0.02125491015613079, # learned by Alpro
     loss_factor = dict(
-        classification = 1.0,
+        pos_cls = 1.0,
+        neg_cls = 1.0,
         distillation = 5.0,
     )
 )
