@@ -11,3 +11,5 @@ Official code for our ICLR2023 paper: "Compositional Prompt Tuning with Motion C
 
 # data-release summarize
 
+- `vidvrd_traj_box_det_th-15-5.zip`: this is used for TrajCls module only, it can be obtained by filter out trajs with length < 15 and area < 5, but we also provide this data to make sure.
+

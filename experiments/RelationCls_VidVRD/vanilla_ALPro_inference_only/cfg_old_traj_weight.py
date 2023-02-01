@@ -20,7 +20,7 @@ model_traj_cfg = dict(
         classification = 1.0,
         distillation = 5.0,
     )
-)
+) # git update-index --assume-unchanged
 
 eval_dataset_cfg = dict(
     dataset_splits = ("test",),

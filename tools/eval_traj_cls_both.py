@@ -4,15 +4,13 @@ import os
 from tqdm import tqdm
 from collections import defaultdict
 
-import numpy as np
 import torch
-from torch.utils.tensorboard import SummaryWriter
 
 from models.TrajClsModel_v2 import OpenVocTrajCls as OpenVocTrajCls_NoBgEmb
 from models.TrajClsModel_v3 import OpenVocTrajCls as OpenVocTrajCls_0BgEmb
 
-# from dataloaders.dataset_vidor import VidORTrajDataset
-from dataloaders.dataset_vidor_v3 import VidORTrajDataset
+
+# from dataloaders.dataset_vidor_v3 import VidORTrajDataset
 from dataloaders.datasets_vidvrd_v3 import VidVRDTrajDataset
 from utils.utils_func import get_to_device_func,vIoU_broadcast
 from utils.config_parser import parse_config_py
@@ -75,9 +73,10 @@ def eval_TrajClsOpenVoc_bsz1(dataset_class,model_class,args,topks=[5,10]):
 
     model = model_class(model_cfg,is_train=False)
     LOGGER.info(f"loading check point from {ckpt_path}")
-    ckeck_point = torch.load(ckpt_path,map_location=torch.device('cpu'))
-    state_dict = ckeck_point["model_state_dict"]
-    model.load_state_dict(state_dict)
+    if not args.use_teacher:
+        ckeck_point = torch.load(ckpt_path,map_location=torch.device('cpu'))
+        state_dict = ckeck_point["model_state_dict"]
+        model.load_state_dict(state_dict)
     model = model.to(device)
     model.eval()
     if hasattr(model,"reset_classifier_weights"):
@@ -462,16 +461,61 @@ if __name__ == "__main__":
     # VidVRDTrajDataset
     
     '''
+    ### Table-1 Alpro OpenVocTrajCls_0BgEmb or OpenVocTrajCls_NoBgEmb either one is fine
     CUDA_VISIBLE_DEVICES=1 python tools/eval_traj_cls_both.py \
         --dataset_class VidVRDTrajDataset \
         --model_class OpenVocTrajCls_0BgEmb \
-        --cfg_path  experiments_vidvrd_trajcls/OpenVocTrajCls_0BgEmb/cfg_trajcls.py \
-        --ckpt_path experiments_vidvrd_trajcls/OpenVocTrajCls_0BgEmb/model_final_wo_distil_bs128_epoch_50.pth \
+        --cfg_path  experiments/TrajCls_VidVRD/0BgEmb/cfg_.py \
         --eval_split novel \
-        --output_dir experiments_vidvrd_trajcls/OpenVocTrajCls_0BgEmb \
+        --output_dir experiments/TrajCls_VidVRD/ALPro \
         --use_teacher \
         --save_tag teacher_novel
     
+    ### Table-1 RePro-#1 w/o Distil & w/o BgEmb OpenVocTrajCls_NoBgEmb
+    CUDA_VISIBLE_DEVICES=1 python tools/eval_traj_cls_both.py \
+        --dataset_class VidVRDTrajDataset \
+        --model_class OpenVocTrajCls_NoBgEmb \
+        --cfg_path   experiments/TrajCls_VidVRD/NoBgEmb/cfg_.py \
+        --ckpt_path  experiments/TrajCls_VidVRD/NoBgEmb/model_final_wo_distil_bs128_epoch_50.pth \
+        --eval_split novel \
+        --output_dir experiments/TrajCls_VidVRD/NoBgEmb  \
+        --save_tag wo_distil_novel
+    
+
+    ### Table-1 RePro-#2 w/o Distil & w/ BgEmb OpenVocTrajCls_0BgEmb
+    CUDA_VISIBLE_DEVICES=1 python tools/eval_traj_cls_both.py \
+        --dataset_class VidVRDTrajDataset \
+        --model_class OpenVocTrajCls_0BgEmb \
+        --cfg_path   experiments/TrajCls_VidVRD/0BgEmb/cfg_.py \
+        --ckpt_path  experiments/TrajCls_VidVRD/0BgEmb/model_final_wo_distil_bs128_epoch_50.pth  \
+        --eval_split novel \
+        --output_dir experiments/TrajCls_VidVRD/0BgEmb  \
+        --save_tag wo_distil_novel
+    
+
+    ### Table-1 RePro-#3 w/ Distil & w/ BgEmb OpenVocTrajCls_0BgEmb
+    CUDA_VISIBLE_DEVICES=1 python tools/eval_traj_cls_both.py \
+        --dataset_class VidVRDTrajDataset \
+        --model_class OpenVocTrajCls_0BgEmb \
+        --cfg_path   experiments/TrajCls_VidVRD/0BgEmb/cfg_.py \
+        --ckpt_path  experiments/TrajCls_VidVRD/0BgEmb/model_final_with_distil_w5bs128_epoch_50.pth  \
+        --eval_split novel \
+        --output_dir experiments/TrajCls_VidVRD/0BgEmb  \
+        --save_tag with_distil_novel
+
+    ### Table-1 RePro-#4 w/ Distil & w/o BgEmb OpenVocTrajCls_NoBgEmb
+    CUDA_VISIBLE_DEVICES=1 python tools/eval_traj_cls_both.py \
+        --dataset_class VidVRDTrajDataset \
+        --model_class OpenVocTrajCls_NoBgEmb \
+        --cfg_path    experiments/TrajCls_VidVRD/NoBgEmb/cfg_.py \
+        --ckpt_path    experiments/TrajCls_VidVRD/NoBgEmb/model_final_with_distil_w5bs128_epoch_50.pth \
+        --eval_split novel \
+        --output_dir   experiments/TrajCls_VidVRD/NoBgEmb \
+        --save_tag with_distil_novel
+    
+
+    ##############
+
     CUDA_VISIBLE_DEVICES=1 python tools/eval_traj_cls_both.py \
         --dataset_class VidVRDTrajDataset \
         --model_class OpenVocTrajCls_0BgEmb \

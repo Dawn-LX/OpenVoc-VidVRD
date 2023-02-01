@@ -27,6 +27,7 @@ _ext
 backup_files/
 cache/
 test_gramma/
+home/
 
 # Pycharm editor settings
 .idea

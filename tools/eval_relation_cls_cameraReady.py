@@ -17,16 +17,11 @@ from models.TrajClsModel_v2 import OpenVocTrajCls as OpenVocTrajCls_NoBgEmb
 from models.RelationClsModel_v3 import AlproVisual_with_FixedPrompt     # Table-3 ALpro
 from models.RelationClsModel_v3 import VidVRDII_FixedPrompt             # Table-3 VidVRD-II
 from models.RelationClsModel_v3 import OpenVocRelCls_LearnablePrompt    # Table-3 RePro^\dagger
-from models.RelationClsModel_v3 import OpenVocRelCls_stage2_Grouped     # Table-3 RePro
+from models.RelationClsModel_v3 import OpenVocRelCls_stage2_Grouped     # The final model RePro in Tables 2,3,4
 from models.RelationClsModel_v3 import OpenVocRelCls_stage2_Single      # Table-4 Repro w/o Comp. & w/o Motion
 from models.RelationClsModel_v3 import OpenVocRelCls_stage2             # Table-4 Repro w Comp. & w/o Motion
 from models.RelationClsModel_v3 import OpenVocRelCls_stage2_MeanEnsemble    # Table-4 Repro w Comp. & Ens
 from models.RelationClsModel_v3 import OpenVocRelCls_stage2_GroupedRandom   # Table-4 Repro w Comp. & Rand
-
-
-
-
-
 
 from dataloaders.dataset_vidvrd_v2 import VidVRDUnifiedDataset,VidVRDUnifiedDataset_GIoU
 from utils.config_parser import parse_config_py
@@ -754,7 +749,21 @@ if __name__ == "__main__":
     
 
     '''
-    export 
+    ################################ Table-2 ######################################
+    ### Table-2 (RePro with both base and novel training data)
+    
+    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=1 python tools/eval_relation_cls_cameraReady.py \
+        --pred_cls_split_info_path configs/VidVRD_pred_class_spilt_info_v2.json \
+        --model_class OpenVocRelCls_stage2_Grouped  \
+        --dataset_class VidVRDUnifiedDataset_GIoU \
+        --cfg_path  experiments/RelationCls_VidVRD/RePro_both_BaseNovel_training/stage2/cfg_.py \
+        --ckpt_path_pred experiments/RelationCls_VidVRD/RePro_both_BaseNovel_training/stage2/model_bsz32_best_mAP.pth \
+        --output_dir experiments/RelationCls_VidVRD/RePro_both_BaseNovel_training/stage2/ \
+        --target_split_traj all \
+        --target_split_pred all \
+        --eval_type SGDet \
+        --save_tag TaPa_CR_
+
     ################################ Table-3 ######################################
     ### Table-3 (ALPro) AlproVisual_with_FixedPrompt
     TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=3 python tools/eval_relation_cls_cameraReady.py \
