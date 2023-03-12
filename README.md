@@ -11,6 +11,17 @@ Official code for our ICLR2023 paper: "Compositional Prompt Tuning with Motion C
 
 # data-release summarize
 
+**Overview**: There are 3 types of data
+- tacklet bbox (or traj bbox): bounding box sequence after object tracking. 
+    - Here we use Seq-NMS to perform tracking, and we do tracking in each video segment (30 frame per seg)
+- traj RoI features: 2048-d RoI features obtained by FasterRCNN's RoI-Align. Here we use [VinVL](https://github.com/pzzhang/VinVL) (its model structure is FasterRCNN). 
+    - We extracted the RoI feature for each tracklet (i.e., each bbox in the bbox sequence), and averaged the feature along the time axis (the released data is after this averaging).
+- traj embds: 256-d embeddings obtained by the video-language pre-train model [ALpro](https://github.com/salesforce/ALPRO). 
+    - **NOTE**: we call this as embedding (in README file and our code) to distinguish it with the 2048-d RoI feature.
+    - Also NOTE that this is not extracted per-box of the tracklet and averaged along time axis. ALPro takes as input the video segment and output the 256-d embedding directly. In our implementation, we crop the video region according to the traj bboxes, and take this as the input to ALpro.
+
+For each type of the above data, it includes `gt` and `det`, i.e., ground-truth traj bboxes and detection traj bboxes, with their features/embds. (certainly, we don't need Seq-NMS to perform tracking for `gt`)
+
 ## VidVRD
 ### Pre-prepared traj data ([MEGA cloud link](https://mega.nz/folder/AYBkxCaI#QCqV3cnIdY_9DXGUnCtSvA))
 
