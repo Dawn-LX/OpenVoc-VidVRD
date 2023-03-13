@@ -13,7 +13,7 @@ import torch
 from tqdm import tqdm
 
 from utils.utils_func import vIoU_broadcast,vPoI_broadcast,trajid2pairid,bbox_GIoU
-from .dataset_vidvrd import VidVRDGTDatasetForTrain
+
 
 def load_json(filename):
     with open(filename, "r") as f:
@@ -49,6 +49,331 @@ def _to_xywh(bboxes):
     w = bboxes[...,2] - bboxes[...,0]
     h = bboxes[...,3] - bboxes[...,1]
     return x,y,w,h
+
+
+class VidVRDGTDatasetForTrain(object):
+    def __init__(self,
+        dataset_dir = "/home/gkf/project/VidVRD_VidOR/vidvrd-dataset",
+        tracking_results_dir = "/home/gkf/project/scene_graph_benchmark/output/VidVRD_tracking_results_gt",
+        traj_features_dir = "/home/gkf/project/scene_graph_benchmark/output/VidVRD_gt_traj_features_seg30",
+        traj_embd_dir = "/home/gkf/project/ALPRO/extract_features_output/vidvrd_seg30_TrajFeatures256_gt",
+        traj_cls_split_info_path = "TODO",
+        pred_cls_split_info_path = "TODO",
+        pred_cls_splits = ("base",),
+        traj_cls_splits = ("base",),
+        bsz_wrt_pair = True,
+    ):
+
+        self.dataset_dir = dataset_dir
+        self.tracking_results_dir = tracking_results_dir
+        self.traj_features_dir = traj_features_dir
+        self.traj_embd_dir = traj_embd_dir
+        traj_cls_split_info = load_json(traj_cls_split_info_path)
+        self.traj_cls2id_map = traj_cls_split_info["cls2id"]
+        self.traj_cls2split_map = traj_cls_split_info["cls2split"]
+        pred_cls_split_info = load_json(pred_cls_split_info_path)
+        self.pred_cls2id_map = pred_cls_split_info["cls2id"]
+        self.pred_cls2split_map = pred_cls_split_info["cls2split"]
+        self.pred_cls_splits = pred_cls_splits
+        self.traj_cls_splits = traj_cls_splits
+        self.bsz_wrt_pair = bsz_wrt_pair
+
+        segment_tags = [filename.split('.')[0] for filename in  sorted(os.listdir(self.tracking_results_dir))] # e.g., ILSVRC2015_train_00010001-0016-0048
+        self.segment_tags = segment_tags  # 5855 for vidvrd-train
+
+        self.traj_infos = self.get_traj_infos()
+        self.gt_triplets = self.get_gt_triplets()  # filter out segs that have no relation annotation
+        self.segment_tags = sorted(self.gt_triplets.keys())  
+        # 3031 for pred_cls_splits = ("base","novel") & traj_cls_splits = ("base","novel")
+        # 2981 for pred_cls_splits = ("base",) & traj_cls_splits = ("base","novel")
+        # 1995 for pred_cls_splits = ("base",) & traj_cls_splits = ("base",)
+
+        if self.bsz_wrt_pair:
+            print("merge data from all segments ...")
+            all_datas = []
+            for seg_tag in tqdm(self.segment_tags):
+                data = self.getitem_for_seg(seg_tag)
+                # ( 
+                #     seg_tag,
+                #     s_roi_feats,    # (n_pair,2048)
+                #     o_roi_feats,
+                #     s_embds,        # （n_pair,256)
+                #     o_embds,
+                #     relpos_feats,   # (n_pair,12)
+                #     triplet_cls_ids # list[tesor], len == n_pair, each shape == (n_preds,3)
+                # ) = data
+                n_pair = data[1].shape[0]
+                for i in range(n_pair):
+                    single_pair_data = tuple(x[i] for x in data[1:])
+                    all_datas.append(single_pair_data)
+            self.all_datas = all_datas
+            
+
+        print("------------- dataset constructed -----------, len(self) == {}".format(len(self)))
+    
+    def __len__(self):
+        if self.bsz_wrt_pair:
+            return len(self.all_datas)
+        else:
+            return len(self.segment_tags)
+
+    def load_video_annos(self):
+        print("loading video annos for train set ...")
+        # avoid loading the same video's annotations multiple times (i.e., for multiple segments in a same video)
+        annos = dict()
+        anno_dir = os.path.join(self.dataset_dir,"train")
+        for filename in sorted(os.listdir(anno_dir)):
+            video_name = filename.split('.')[0]  # e.g., ILSVRC2015_train_00405001.json
+            path = os.path.join(anno_dir,filename)
+
+            with open(path,'r') as f:
+                anno_per_video = json.load(f)  # refer to `datasets/vidvrd-dataset/format.py`
+            annos[video_name] = anno_per_video
+
+        return annos
+    
+
+    def get_traj_embds(self,seg_tag):
+        
+        path = os.path.join(self.traj_embd_dir,seg_tag+'.npy')
+        temp = np.load(path).astype('float32')  # (n_gt_traj, 1+256)
+        temp = torch.from_numpy(temp)
+        traj_embds = temp[:,1:]    # (n_gt_traj, 256)
+        # traj_ids = temp[:,0]        # (n_gt_traj,)  we do not filter gt_traj w.r.t traj_len_th
+        
+        return traj_embds
+
+
+    def get_gt_triplets(self):
+        
+        video_annos = self.load_video_annos()
+
+        gt_triplets_all = dict()
+        for seg_tag in tqdm(self.segment_tags):
+            video_name, seg_fs, seg_fe = seg_tag.split('-')  # e.g., "ILSVRC2015_train_00010001-0016-0048"
+            seg_fs,seg_fe = int(seg_fs),int(seg_fe)
+            anno = deepcopy(video_annos[video_name])
+            trajid2cls_map = {traj["tid"]:traj["category"] for traj in anno["subject/objects"]}
+            # e.g., {0: 'bicycle', 1: 'bicycle', 2: 'person', 3: 'person', 5: 'person'} # not necessarily continuous
+
+            gt_triplets = defaultdict(list)
+            relations = anno["relation_instances"]
+            for rel in relations: # loop for relations of all segments in this video, some segments may have no annotation
+                s_tid,o_tid = rel["subject_tid"],rel["object_tid"]
+                s_cls = trajid2cls_map[s_tid]
+                o_cls = trajid2cls_map[o_tid]
+                pred_cls = rel["predicate"]   # pred class name
+                if not (self.pred_cls2split_map[pred_cls] in self.pred_cls_splits):
+                    continue
+                if (self.traj_cls2split_map[s_cls] not in self.traj_cls_splits) or (self.traj_cls2split_map[o_cls] not in self.traj_cls_splits):
+                    continue
+                
+                fs,fe =  rel["begin_fid"],rel["end_fid"]  # [fs,fe)  fe is exclusive (from annotation)
+                if not (seg_fs <= fs and fe <= seg_fe):  # we only select predicate that within this segment <-- actually, I suppose that this operation is WRONG
+                    continue
+                assert seg_fs == fs and seg_fe == fe     # 由于VidVRD标注的原因，每个relation都是标注一整个segment的 （对VidOR 不适用）
+                
+                gt_triplets[(s_tid,o_tid)].append((s_cls,pred_cls,o_cls))
+            if len(gt_triplets) > 0:
+                gt_triplets_all[seg_tag] = gt_triplets
+            
+        return gt_triplets_all
+
+    def get_traj_infos(self):
+        info_str = "loading tracking_results from {} ... ".format(self.tracking_results_dir)
+        # refer to func:reformulate_gt_to_tracking_results_format() in `/home/gkf/project/scene_graph_benchmark/tools/extract_features/extract_traj_features.py`
+        print(info_str)
+        '''
+        tracking_results = [
+            {
+                'fstarts': int(fstart),      # relative frame idx w.r.t this segment
+                'score': score,             # float scalar
+                'bboxes': bboxes.tolist()   # list[list], len == num_frames, format xyxy
+                'class':  class_name         
+                'tid':  tid
+            },
+            ...
+        ]  # len(tracking_results) == num_tracklets
+        '''
+        traj_infos = dict()
+        for seg_tag in tqdm(self.segment_tags):
+
+            path = os.path.join(self.tracking_results_dir,seg_tag + ".json")
+            with open(path,'r') as f:
+                gt_results = json.load(f)
+            path = os.path.join(self.traj_features_dir,seg_tag+".npy")
+            gt_features = np.load(path).astype('float32')  # (num_traj, 2048)
+            
+            fstarts = []
+            scores = []
+            bboxes = []
+            tids = []
+            clsids = []
+            for res in gt_results:
+                # print(res.keys())
+                fstarts.append(res["fstart"])  # relative frame_id  w.r.t segment fstart
+                scores.append(res["score"])
+                bboxes.append(torch.as_tensor(res["bboxes"])) # (num_boxes, 4)
+                tids.append(res["tid"])
+                clsids.append(self.traj_cls2id_map[res["class"]])
+            
+            if scores:  # i.e., if scores != []
+                traj_info = {
+                    "fstarts":torch.as_tensor(fstarts), # shape == (num_traj,)
+                    "scores":torch.as_tensor(scores),  # shape == (num_traj,)
+                    "bboxes":bboxes,  # list[tensor] , len== num_traj, each shape == (num_boxes, 4)
+                    "features":torch.from_numpy(gt_features),  # shape == (num_traj, 2048)
+                    "tids":torch.as_tensor(tids),        # shape == (num_traj,)
+                    "clsids":torch.as_tensor(clsids)    # object category id
+                }
+            else:
+                traj_info = None
+            traj_infos[seg_tag] = traj_info
+        
+        return traj_infos
+
+
+    def _to_xywh(self,bboxes):
+        x = (bboxes[...,0] + bboxes[...,2])/2
+        y = (bboxes[...,1] + bboxes[...,3])/2
+        w = bboxes[...,2] - bboxes[...,0]
+        h = bboxes[...,3] - bboxes[...,1]
+        return x,y,w,h
+
+    def get_pred_labels(self,gt_triplets,traj_tids):
+        '''TODO FIXME add background label for negative pairs'''
+        tid2idx_map = {tid:idx for idx,tid in enumerate(traj_tids.tolist())}
+        
+        pair_ids = []
+        triplet_cls_ids = []
+        for k,spo_list in gt_triplets.items():  # loop for n_pair
+            s_tid,o_tid = k
+            s_idx,o_idx = tid2idx_map[s_tid],tid2idx_map[o_tid]
+            pair_ids.append([s_idx,o_idx])
+            # triplet_cls_list.append(spo)
+            spo_list = [
+                [self.traj_cls2id_map[spo[0]],self.pred_cls2id_map[spo[1]],self.traj_cls2id_map[spo[2]]]
+                for spo in spo_list
+            ]  # len == n_preds
+            triplet_cls_ids.append(torch.as_tensor(spo_list))  # (n_preds,3)
+        pair_ids = torch.as_tensor(pair_ids)  # (n_pair,2)
+        
+        # print(list(gt_triplets.keys()),pair_ids.shape)
+        # triplet_cls_ids len == n_pair each shape == (n_preds,3)
+
+        return pair_ids,triplet_cls_ids
+    
+    def __getitem__(self, idx):
+        
+        if not self.bsz_wrt_pair:
+            return self.getitem_for_seg(self.segment_tags[idx])
+        
+
+        single_pair_data = deepcopy(self.all_datas[idx])
+        # (
+        #     s_roi_feats,  # (2048,)
+        #     o_roi_feats,
+        #     s_embds,      # (256,)
+        #     o_embds
+        #     relpos_feats, # (12,)
+        #     triplet_cls_ids   # (n_preds,3)
+        # ) = single_pair_data
+        # TODO FIXME add negative sample
+        return single_pair_data
+        
+
+    def getitem_for_seg(self,seg_tag):
+        seg_tag = deepcopy(seg_tag)
+        gt_triplets = deepcopy(self.gt_triplets[seg_tag])
+        traj_infos = deepcopy(self.traj_infos[seg_tag])
+        pair_ids,triplet_cls_ids = self.get_pred_labels(gt_triplets,traj_infos["tids"])
+
+        sids = pair_ids[:,0]
+        oids = pair_ids[:,1]
+
+        relpos_feats = self.get_relative_position_feature(seg_tag,sids,oids)  # (n_pair,12)
+
+        traj_features  = traj_infos["features"]
+        s_roi_feats = traj_features[sids,:]     # (n_pair,2048)
+        o_roi_feats = traj_features[oids,:]     # as above
+
+        traj_embds = self.get_traj_embds(seg_tag)
+        s_embds = traj_embds[sids,:]  # (n_pair,256)
+        o_embds = traj_embds[oids,:]
+
+
+        return seg_tag,s_roi_feats,o_roi_feats,s_embds,o_embds,relpos_feats,triplet_cls_ids
+ 
+
+    def get_relative_position_feature(self,seg_tag,sids,oids):
+
+        traj_fstarts = self.traj_infos[seg_tag]["fstarts"]  # (n_det,)
+        traj_bboxes = self.traj_infos[seg_tag]["bboxes"] # list[tensor] , len == n_det, each shape == (num_boxes, 4)
+        
+
+        ## 2.
+        s_trajs = [traj_bboxes[idx] for idx in sids]  # format: xyxy
+        o_trajs = [traj_bboxes[idx] for idx in oids]  # len == n_pair, each shape == (n_frames,4)
+
+        s_fstarts = traj_fstarts[sids]  # (n_pair_aft_filter,)
+        o_fstarts = traj_fstarts[oids]  # 
+
+        s_lens = torch.as_tensor([x.shape[0] for x in s_trajs],device=s_fstarts.device)  # (n_pair_aft_filter,)
+        o_lens = torch.as_tensor([x.shape[0] for x in o_trajs],device=o_fstarts.device)
+
+        s_duras = torch.stack([s_fstarts,s_fstarts+s_lens],dim=-1)  # (n_pair_aft_filter,2)
+        o_duras = torch.stack([o_fstarts,o_fstarts+o_lens],dim=-1)  # (n_pair_aft_filter,2)
+
+        s_bboxes = [torch.stack((boxes[0,:],boxes[-1,:]),dim=0) for boxes in s_trajs]  # len == n_pair_aft_filter, each shape == (2,4)
+        s_bboxes = torch.stack(s_bboxes,dim=0)  # (n_pair_aft_filter, 2, 4)  # 2 stands for the start & end bbox of the traj
+
+        o_bboxes = [torch.stack((boxes[0,:],boxes[-1,:]),dim=0) for boxes in o_trajs]
+        o_bboxes = torch.stack(o_bboxes,dim=0)  # (n_pair_aft_filter, 2, 4)
+
+    
+        ## 3. calculate relative position feature
+        subj_x, subj_y, subj_w, subj_h = self._to_xywh(s_bboxes.float())  # (n_pair_aft_filter,2)
+        obj_x, obj_y, obj_w, obj_h = self._to_xywh(o_bboxes.float())      # (n_pair_aft_filter,2)
+
+        log_subj_w, log_subj_h = torch.log(subj_w), torch.log(subj_h)
+        log_obj_w, log_obj_h = torch.log(obj_w), torch.log(obj_h)
+
+        rx = (subj_x-obj_x)/obj_w   # (n_pair_aft_filter,2)
+        ry = (subj_y-obj_y)/obj_h
+        rw = log_subj_w-log_obj_w
+        rh = log_subj_h-log_obj_h
+        ra = log_subj_w+log_subj_h-log_obj_w-log_obj_h
+        rt = (s_duras-o_duras) / 30  # (n_pair_aft_filter,2)
+        rel_pos_feat = torch.cat([rx,ry,rw,rh,ra,rt],dim=-1)  # (n_pair_aft_filter,12)
+
+        return rel_pos_feat
+        
+    def get_collator_func(self):
+        
+        def collate_func1(batch_data):
+            bsz = len(batch_data)
+            n_items = len(batch_data[0])
+            # assert n_items == 6   # exclude seg_tag
+            batch_data = [[batch_data[bid][iid] for bid in range(bsz)] for iid in range(n_items)]
+            batch_data = tuple(torch.stack(bath_di,dim=0) if i<n_items-1 else bath_di for i,bath_di in enumerate(batch_data))
+            # the last one is triplet_cls_ids
+            return batch_data
+        
+        def collate_func2(batch_data):
+            # this collator_func simply swaps the order of inner and outer of batch_data
+
+            bsz = len(batch_data)
+            num_rt_vals = len(batch_data[0])
+            # assert num_rt_vals == 7
+            return_values = tuple([batch_data[bid][vid] for bid in range(bsz)] for vid in range(num_rt_vals))
+            return return_values
+
+
+        if self.bsz_wrt_pair:
+            return collate_func1
+        else:
+            return collate_func2
+
 
 class VidVRDUnifiedDataset(object):
     '''
