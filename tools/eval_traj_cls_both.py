@@ -11,7 +11,7 @@ from models.TrajClsModel_v3 import OpenVocTrajCls as OpenVocTrajCls_0BgEmb
 
 
 # from dataloaders.dataset_vidor_v3 import VidORTrajDataset
-from dataloaders.datasets_vidvrd_v3 import VidVRDTrajDataset
+from dataloaders.dataset_vidvrd_v3 import VidVRDTrajDataset
 from utils.utils_func import get_to_device_func,vIoU_broadcast
 from utils.config_parser import parse_config_py
 from utils.logger import LOGGER, add_log_to_file

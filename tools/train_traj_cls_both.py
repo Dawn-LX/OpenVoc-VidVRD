@@ -13,7 +13,7 @@ from models.TrajClsModel_v2 import OpenVocTrajCls as OpenVocTrajCls_NoBgEmb
 from models.TrajClsModel_v3 import OpenVocTrajCls as OpenVocTrajCls_0BgEmb
 # from dataloaders.dataset_vidor_v2 import VidORTrajDataset
 from dataloaders.dataset_vidor_v3 import VidORTrajDataset
-from dataloaders.datasets_vidvrd_v3 import VidVRDTrajDataset
+from dataloaders.dataset_vidvrd_v3 import VidVRDTrajDataset
 from utils.utils_func import get_to_device_func
 from utils.config_parser import parse_config_py
 from utils.logger import LOGGER, add_log_to_file
@@ -345,7 +345,7 @@ if __name__ == "__main__":
     parser.add_argument("--model_class", type=str,help="...")
     parser.add_argument("--dataset_class", type=str,help="...")
     parser.add_argument("--output_dir", type=str, help="default `output_dir` will be set as the dir of `cfg_path`")
-    parser.add_argument("--use_distillation", action="store_true")  # 'store_true' 代表运行程序时加上 --visualize_attr， 就代表 visualize_attr取True， 不加的时候就默认False
+    parser.add_argument("--use_distillation", action="store_true")  # 
     parser.add_argument("--from_checkpoint", action="store_true")
     parser.add_argument("--train_baseline", action="store_true")
     parser.add_argument("--ckpt_path", type=str,help="...")
