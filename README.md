@@ -42,7 +42,7 @@ In detail, there are the following files: (where `data0/` refers to `/home/gkf/p
 
 ### Model weights
 - TrajCls module: `TrajCls_VidVRD.zip` ([here](https://mega.nz/file/xAo2QZhI#qPEnvaF9Rx-vPHWZMagFNwS71SxDRorWNs-M-uJsaUs))
-- RelationCls module
+- RelationCls module: `RelationCls_VidVRD.zip` ([here](https://mega.nz/file/sExTGJQK#gHEovg3bYxGptsar7AQZipS64QjadI0zT_58SrHwOKE))
 
 ## VidOR
 
