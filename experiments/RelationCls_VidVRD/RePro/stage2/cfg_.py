@@ -10,7 +10,7 @@ model_pred_cfg = dict(
     n_context_tokens = 10,
     n_prompt_groups = 6,
     giou_th = -0.3,
-    prompter_ckpt_path = "experiments/RelationCls_VidVRD/RePro/stage1/model_bsz32_best_mAP_epoch-48.pth",
+    prompter_ckpt_path = "experiments/RelationCls_VidVRD/RePro/stage1/model_bsz32_best_mAP.pth",
     pred_cls_split_info_path = "configs/VidVRD_pred_class_spilt_info_v2.json",
 )
 
