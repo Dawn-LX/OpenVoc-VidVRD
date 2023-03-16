@@ -41,7 +41,7 @@ In detail, there are the following files: (where `data0/` refers to `/home/gkf/p
     - det:  `vidvrd_traj_emb_det.zip`, c.t. `data0/ALPRO/extract_features_output/vidvrd_seg30_TrajFeatures256`
 
 ### Model weights
-- TrajCls module
+- TrajCls module: `TrajCls_VidVRD.zip` ([here](https://mega.nz/file/xAo2QZhI#qPEnvaF9Rx-vPHWZMagFNwS71SxDRorWNs-M-uJsaUs))
 - RelationCls module
 
 ## VidOR
