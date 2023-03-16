@@ -27,8 +27,10 @@ For each type of the above data, it includes `gt` and `det`, i.e., ground-truth 
 
 In detail, there are the following files: (where `data0/` refers to `/home/gkf/project/`)
 
+- object category text embedding: `vidvrd_ObjTextEmbeddings.pth` corresponding to `data0/VidVRD-OpenVoc/prepared_data/vidvrd_ObjTextEmbeddings.pth`
+
 - traj bbox 
-    - gt: `vidvrd_traj_box_gt.zip`, corresponding to `data0/scene_graph_benchmark/output/VidVRDtest_tracking_results_gt`
+    - gt: `vidvrd_traj_box_gt.zip`, c.t. `data0/scene_graph_benchmark/output/VidVRDtest_tracking_results_gt`
     - det:  `vidvrd_traj_box_det.zip`, c.t. `data0/VidVRD-II/tracklets_results/VidVRD_segment30_tracking_results`
     - det-th-15-5:  `vidvrd_traj_box_det_th-15-5.zip`, c.t. `data0/VidVRD-OpenVoc/vidvrd_traj_box_det_th-15-5.zip`
         - this is used for TrajCls module only, it can be obtained by filter out trajs with length < 15 and area < 5, but we also provide this data to make sure.
