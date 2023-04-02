@@ -20,7 +20,7 @@ _ext
 **/.ipynb_checkpoints/
 
 # NOTES
-*notes.md
+note*.md
 
 # local files
 backup_files/
