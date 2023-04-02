@@ -41,5 +41,8 @@ backup/
 
 # data:
 Alpro_weights/
-data0/
+data0*/
 pre-prepared_data/
+
+# notes:
+AllPyFiles_ZJU-server/
