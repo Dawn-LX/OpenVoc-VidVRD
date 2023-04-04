@@ -1,5 +1,5 @@
 
-import root_path
+
 import argparse
 import os
 from tqdm import tqdm

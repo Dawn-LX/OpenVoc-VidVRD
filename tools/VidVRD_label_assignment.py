@@ -1,4 +1,4 @@
-import root_path
+
 
 import argparse
 import os
