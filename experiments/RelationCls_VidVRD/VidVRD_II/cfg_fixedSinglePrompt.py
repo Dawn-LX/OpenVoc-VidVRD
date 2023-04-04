@@ -27,13 +27,13 @@ model_traj_cfg = dict(
 
 train_dataset_cfg = dict(
     dataset_splits = ("train",),
-    enti_cls_spilt_info_path = "data0/VidVRD-OpenVoc/configs/VidVRD_class_spilt_info.json",
+    enti_cls_spilt_info_path = "configs/VidVRD_class_spilt_info.json",
     pred_cls_split_info_path = "configs/VidVRD_pred_class_spilt_info_v2.json",
     dataset_dir = "data0/VidVRD_VidOR/vidvrd-dataset",
     traj_info_dir = "data0/VidVRD-II/tracklets_results/VidVRD_segment30_tracking_results",
     traj_features_dir = "data0/scene_graph_benchmark/output/VidVRD_traj_features_seg30", # 2048-d RoI feature
     traj_embd_dir = "data0/ALPRO/extract_features_output/vidvrd_seg30_TrajFeatures256", ## 256-d
-    cache_dir = "data0/VidVRD-OpenVoc/datasets/cache",
+    cache_dir = "datasets/cache_vidvrd",
     gt_training_traj_supp = dict(
         traj_dir = "data0/scene_graph_benchmark/output/VidVRD_tracking_results_gt",
         feature_dir = "data0/scene_graph_benchmark/output/VidVRD_gt_traj_features_seg30",
@@ -55,7 +55,7 @@ eval_dataset_cfg = dict(
     traj_info_dir = "data0/VidVRD-II/tracklets_results/VidVRD_segment30_tracking_results",
     traj_features_dir = "data0/scene_graph_benchmark/output/VidVRD_traj_features_seg30", # 2048-d RoI feature
     traj_embd_dir = "data0/ALPRO/extract_features_output/vidvrd_seg30_TrajFeatures256", ## 256-d
-    cache_dir = "data0/VidVRD-OpenVoc/datasets/cache",
+    cache_dir = "datasets/cache_vidvrd",
     gt_training_traj_supp = None,
     traj_len_th = 15,
     min_region_th = 5,
@@ -93,7 +93,7 @@ eval_cfg = dict(
 eval_cfg_for_train = dict(
     pred_topk = 10,
     return_triplets_topk = 200,
-    ckpt_path_traj = "experiments/ALPro_teacher/model_OpenVoc_w15BS128_epoch_50.pth"
+    ckpt_path_traj = "experiments/TrajCls_VidVRD/NoBgEmb/model_final_with_distil_w5bs128_epoch_50.pth"
 )
 
 association_cfg = dict(

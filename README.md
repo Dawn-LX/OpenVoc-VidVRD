@@ -27,7 +27,7 @@ For each type of the above data, it includes `gt` and `det`, i.e., ground-truth 
 
 In detail, there are the following files: (where `data0/` refers to `/home/gkf/project/`)
 
-- object category text embedding: `vidvrd_ObjTextEmbeddings.pth` corresponding to `data0/VidVRD-OpenVoc/prepared_data/vidvrd_ObjTextEmbeddings.pth`
+- object category text embedding: `vidvrd_ObjTextEmbeddings.pth` corresponding to (c.t.) `data0/VidVRD-OpenVoc/prepared_data/vidvrd_ObjTextEmbeddings.pth`
 
 - traj bbox 
     - gt: `vidvrd_traj_box_gt.zip`, c.t. `data0/scene_graph_benchmark/output/VidVRDtest_tracking_results_gt`

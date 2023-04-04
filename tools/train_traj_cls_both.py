@@ -11,9 +11,9 @@ from torch.utils.tensorboard import SummaryWriter
 
 from models.TrajClsModel_v2 import OpenVocTrajCls as OpenVocTrajCls_NoBgEmb
 from models.TrajClsModel_v3 import OpenVocTrajCls as OpenVocTrajCls_0BgEmb
-# from dataloaders.dataset_vidor_v2 import VidORTrajDataset
+
 from dataloaders.dataset_vidor_v3 import VidORTrajDataset
-from dataloaders.dataset_vidvrd_v3 import VidVRDTrajDataset
+from dataloaders.dataset_vidvrd_v2 import VidVRDTrajDataset
 from utils.utils_func import get_to_device_func
 from utils.config_parser import parse_config_py
 from utils.logger import LOGGER, add_log_to_file
@@ -377,46 +377,52 @@ if __name__ == "__main__":
     !!!!!! NOTE export the path environment variable first
     export PYTHONPATH=$PYTHONPATH:"/your_project_path/" (e.g., "/home/username/OpenVoc-VidVRD")
 
-    ########## VidVRD
-
-    CUDA_VISIBLE_DEVICES=1 python tools/train_traj_cls_both.py \
-        --dataset_class VidVRDTrajDataset \
-        --model_class OpenVocTrajCls_NoBgEmb \
-        --cfg_path experiments_vidvrd_trajcls/OpenVocTrajCls_NoBgEmb/cfg_trajcls.py \
-        --output_dir experiments_vidvrd_trajcls/OpenVocTrajCls_NoBgEmb/ \
-        --use_distillation \
-        --save_tag w5bs128
+    ############################## VidVRD ##############################
     
+    ### Table-1 RePro-#1 w/o Distil & w/o BgEmb (OpenVocTrajCls_NoBgEmb)
     CUDA_VISIBLE_DEVICES=3 python tools/train_traj_cls_both.py \
         --dataset_class VidVRDTrajDataset \
         --model_class OpenVocTrajCls_NoBgEmb \
-        --cfg_path experiments_vidvrd_trajcls/OpenVocTrajCls_NoBgEmb/cfg_trajcls.py \
-        --output_dir experiments_vidvrd_trajcls/OpenVocTrajCls_NoBgEmb/ \
+        --cfg_path experiments/TrajCls_VidVRD/NoBgEmb/cfg_.py \
+        --output_dir experiments/TrajCls_VidVRD/NoBgEmb \
         --save_tag bs128
 
+    ### Table-1 RePro-#4 w/ Distil & w/o BgEmb (OpenVocTrajCls_NoBgEmb)
+    CUDA_VISIBLE_DEVICES=1 python tools/train_traj_cls_both.py \
+        --dataset_class VidVRDTrajDataset \
+        --model_class OpenVocTrajCls_NoBgEmb \
+        --cfg_path experiments/TrajCls_VidVRD/NoBgEmb/cfg_.py \
+        --output_dir experiments/TrajCls_VidVRD/NoBgEmb \
+        --use_distillation \
+        --save_tag w5bs128_
     
+    
+    ### Table-1 RePro-#2 w/o Distil & w/ BgEmb (OpenVocTrajCls_0BgEmb)
+    CUDA_VISIBLE_DEVICES=3 python tools/train_traj_cls_both.py \
+        --dataset_class VidVRDTrajDataset \
+        --model_class OpenVocTrajCls_0BgEmb \
+        --cfg_path experiments/TrajCls_VidVRD/0BgEmb/cfg_.py \
+        --output_dir experiments/TrajCls_VidVRD/0BgEmb \
+        --save_tag bs128
+    
+    ### Table-1 RePro-#3 w/ Distil & w/ BgEmb (OpenVocTrajCls_0BgEmb)
     CUDA_VISIBLE_DEVICES=2 python tools/train_traj_cls_both.py \
         --dataset_class VidVRDTrajDataset \
         --model_class OpenVocTrajCls_0BgEmb \
-        --cfg_path experiments_vidvrd_trajcls/OpenVocTrajCls_0BgEmb/cfg_trajcls.py \
-        --output_dir experiments_vidvrd_trajcls/OpenVocTrajCls_0BgEmb/ \
+        --cfg_path experiments/TrajCls_VidVRD/0BgEmb/cfg_.py \
+        --output_dir experiments/TrajCls_VidVRD/0BgEmb \
         --use_distillation \
         --save_tag w5bs128
     
-    CUDA_VISIBLE_DEVICES=3 python tools/train_traj_cls_both.py \
-        --dataset_class VidVRDTrajDataset \
-        --model_class OpenVocTrajCls_0BgEmb \
-        --cfg_path experiments_vidvrd_trajcls/OpenVocTrajCls_0BgEmb/cfg_trajcls.py \
-        --output_dir experiments_vidvrd_trajcls/OpenVocTrajCls_0BgEmb/ \
-        --save_tag bs128
+    
+
+    ############################## VidOR ##############################
 
 
-
-    ######### VidOR
     CUDA_VISIBLE_DEVICES=1 python tools/train_traj_cls_both.py \
         --model_class OpenVocTrajCls_0BgEmb \
         --cfg_path experiments_vidor/OpenVocTrajCls_0BgEmb/cfg_trajcls.py \
-        --output_dir experiments_vidor/OpenVocTrajCls_0BgEmb/ \
+        --output_dir experiments/TrajCls_VidOR/0BgEmb \
         --use_distillation \
         --save_tag w5bs16
     
@@ -430,7 +436,7 @@ if __name__ == "__main__":
     CUDA_VISIBLE_DEVICES=3 python tools/train_traj_cls_both.py \
         --model_class OpenVocTrajCls_NoBgEmb \
         --cfg_path experiments_vidor/OpenVocTrajCls_NoBgEmb/cfg_trajcls.py \
-        --output_dir experiments_vidor/OpenVocTrajCls_NoBgEmb/ \
+        --output_dir experiments_vidor/NoBgEmb \
         --use_distillation \
         --save_tag w5bs16
     
