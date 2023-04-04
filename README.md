@@ -32,17 +32,46 @@ In detail, there are the following files: (where `data0/` refers to `/home/gkf/p
 - object category text embedding: `vidvrd_ObjTextEmbeddings.pth` corresponding to (c.t.) `data0/VidVRD-OpenVoc/prepared_data/vidvrd_ObjTextEmbeddings.pth`
 
 - traj bbox 
-    - gt: `vidvrd_traj_box_gt.zip`, c.t. `data0/scene_graph_benchmark/output/VidVRDtest_tracking_results_gt`
-    - det:  `vidvrd_traj_box_det.zip`, c.t. `data0/VidVRD-II/tracklets_results/VidVRD_segment30_tracking_results`
-    - det-th-15-5:  `vidvrd_traj_box_det_th-15-5.zip`, c.t. `data0/VidVRD-OpenVoc/vidvrd_traj_box_det_th-15-5.zip`
+    - gt (200 test videos): `vidvrd_traj_box_gt.zip`, c.t. `data0/scene_graph_benchmark/output/VidVRDtest_tracking_results_gt`
+    - gt (800 train videos): `vidvrd_traj_box_gt_trainset.zip`, c.t. `data0/scene_graph_benchmark/output/VidVRD_tracking_results_gt`
+    - det (all 1k videos):  `vidvrd_traj_box_det.zip`, c.t. `data0/VidVRD-II/tracklets_results/VidVRD_segment30_tracking_results`
+    - det-th-15-5 (all 1k videos):  `vidvrd_traj_box_det_th-15-5.zip`, c.t. `data0/VidVRD-OpenVoc/vidvrd_traj_box_det_th-15-5.zip`
         - this is used for TrajCls module only, it can be obtained by filter out trajs with length < 15 and area < 5, but we also provide this data to make sure.
 - traj RoI features (2048-d)
-    - gt: `vidvrd_traj_roi_gt.zip`, c.t. `data0/scene_graph_benchmark/output/VidVRDtest_gt_traj_features_seg30`
-    - det:  `vidvrd_traj_roi_det.zip`, c.t. `data0/scene_graph_benchmark/output/VidVRD_traj_features_seg30`
-    - det-th-15-5: `vidvrd_traj_roi_det_th-15-5.zip`, c.t. `data0/scene_graph_benchmark/output/VidVRD_traj_features_seg30_th-15-5`
+    - gt (200 test videos): `vidvrd_traj_roi_gt.zip`, c.t. `data0/scene_graph_benchmark/output/VidVRDtest_gt_traj_features_seg30`
+    - gt (800 train videos): `vidvrd_traj_roi_gt_trainset`, c.t. `data0/scene_graph_benchmark/output/VidVRD_gt_traj_features_seg30`
+    - det: (all 1k videos) `vidvrd_traj_roi_det.zip`, c.t. `data0/scene_graph_benchmark/output/VidVRD_traj_features_seg30`
+    - det-th-15-5: (all 1k videos) `vidvrd_traj_roi_det_th-15-5.zip`, c.t. `data0/scene_graph_benchmark/output/VidVRD_traj_features_seg30_th-15-5`
 - traj embds (256-d, and these are all filtered by th-15-5)
-    - gt:  `vidvrd_traj_emb_det.zip`, c.t. `data0/ALPRO/extract_features_output/VidVRDtest_seg30_TrajFeatures256_gt`
-    - det:  `vidvrd_traj_emb_det.zip`, c.t. `data0/ALPRO/extract_features_output/vidvrd_seg30_TrajFeatures256`
+    - gt (200 test videos):  `vidvrd_traj_emb_gt.zip`, c.t. `data0/ALPRO/extract_features_output/VidVRDtest_seg30_TrajFeatures256_gt`
+    - gt (800 train videos): `vidvrd_traj_emb_gt_trainset.zip`, c.t. `data0/ALPRO/extract_features_output/vidvrd_seg30_TrajFeatures256_gt`
+    - det (all 1k videos):  `vidvrd_traj_emb_det.zip`, c.t. `data0/ALPRO/extract_features_output/vidvrd_seg30_TrajFeatures256`
+
+```
+data0/
+|   ALPRO/-------------------------------------------------------------------------------------------------------------(num_folders:1, num_files=0),num_videos=0
+|   |   extract_features_output/---------------------------------------------------------------------------------------(num_folders:3, num_files=1),num_videos=0
+|   |   |   VidVRDtest_seg30_TrajFeatures256_gt/------------------------------------------------------------------(num_folders:0, num_files=2884),num_videos=200
+|   |   |   vidvrd_seg30_TrajFeatures256/-----------------------------------------------------------------------(num_folders:0, num_files=18348),num_videos=1000
+|   |   |   vidvrd_seg30_TrajFeatures256_gt/----------------------------------------------------------------------(num_folders:0, num_files=5855),num_videos=800
+|   scene_graph_benchmark/---------------------------------------------------------------------------------------------(num_folders:1, num_files=0),num_videos=0
+|   |   output/--------------------------------------------------------------------------------------------------------(num_folders:6, num_files=0),num_videos=0
+|   |   |   VidVRD_gt_traj_features_seg30/------------------------------------------------------------------------(num_folders:0, num_files=5855),num_videos=800
+|   |   |   VidVRD_traj_features_seg30_th-15-5/-----------------------------------------------------------------(num_folders:0, num_files=18348),num_videos=1000
+|   |   |   VidVRD_traj_features_seg30/-------------------------------------------------------------------------(num_folders:0, num_files=18348),num_videos=1000
+|   |   |   VidVRDtest_gt_traj_features_seg30/--------------------------------------------------------------------(num_folders:0, num_files=2884),num_videos=200
+|   |   |   VidVRDtest_tracking_results_gt/-----------------------------------------------------------------------(num_folders:0, num_files=2884),num_videos=200
+|   |   |   VidVRD_tracking_results_gt/---------------------------------------------------------------------------(num_folders:0, num_files=5855),num_videos=800
+|   VidVRD-II/---------------------------------------------------------------------------------------------------------(num_folders:1, num_files=0),num_videos=0
+|   |   tracklets_results/---------------------------------------------------------------------------------------------(num_folders:2, num_files=0),num_videos=0
+|   |   |   VidVRD_segment30_tracking_results_th-15-5/----------------------------------------------------------(num_folders:0, num_files=18348),num_videos=1000
+|   |   |   VidVRD_segment30_tracking_results/------------------------------------------------------------------(num_folders:0, num_files=18348),num_videos=1000
+|   VidVRD_VidOR/------------------------------------------------------------------------------------------------------(num_folders:2, num_files=0),num_videos=0
+|   |   vidvrd-dataset/------------------------------------------------------------------------------------------------(num_folders:2, num_files=0),num_videos=0
+|   |   |   train/-------------------------------------------------------------------------------------------------(num_folders:0, num_files=800),num_videos=800
+|   |   |   test/--------------------------------------------------------------------------------------------------(num_folders:0, num_files=200),num_videos=200
+|   |   vidor-dataset/-------------------------------------------------------------------------------------------------(num_folders:0, num_files=0),num_videos=0
+```
 
 ### Model weights
 - TrajCls module: `TrajCls_VidVRD.zip` ([here](https://mega.nz/file/xAo2QZhI#qPEnvaF9Rx-vPHWZMagFNwS71SxDRorWNs-M-uJsaUs))
