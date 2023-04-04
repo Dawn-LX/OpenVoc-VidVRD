@@ -23,7 +23,7 @@ def VidVRDUnifiedDatasetForLabelAssign_assign_label(
         traj_info_dir = "data0/VidVRD-II/tracklets_results/VidVRD_segment30_tracking_results",
         traj_features_dir = "data0/scene_graph_benchmark/output/VidVRD_traj_features_seg30", # 2048-d RoI feature
         traj_embd_dir = "data0/ALPRO/extract_features_output/vidvrd_seg30_TrajFeatures256", ## 256-d
-        cache_dir = "data0/VidVRD-OpenVoc/datasets/cache",
+        cache_dir = "datasets/cache_vidvrd",
         gt_training_traj_supp = dict(
             traj_dir = "data0/scene_graph_benchmark/output/VidVRD_tracking_results_gt",
             feature_dir = "data0/scene_graph_benchmark/output/VidVRD_gt_traj_features_seg30",
@@ -98,17 +98,28 @@ if __name__ == "__main__":
     
     # VidVRDUnifiedDatasetForLabelAssign_assign_label(traj_len_th,min_region_th,vpoi_th,cache_tag,is_save=True)
 
-
-    # for fully supervised
+    # for traj-base & pred-base
     VidVRDUnifiedDatasetForLabelAssign_assign_label(
         traj_len_th,
         min_region_th,
         vpoi_th,
         cache_tag,
         is_save=True,
-        pred_cls_splits=("base","novel"),
-        traj_cls_splits = ("base","novel")
+        pred_cls_splits=("base",),
+        traj_cls_splits = ("base",)
     )
+
+
+    # for fully supervised
+    # VidVRDUnifiedDatasetForLabelAssign_assign_label(
+    #     traj_len_th,
+    #     min_region_th,
+    #     vpoi_th,
+    #     cache_tag,
+    #     is_save=True,
+    #     pred_cls_splits=("base","novel"),
+    #     traj_cls_splits = ("base","novel")
+    # )
     '''
     python tools/VidVRD_label_assignment.py \
         --traj_len_th 15 \

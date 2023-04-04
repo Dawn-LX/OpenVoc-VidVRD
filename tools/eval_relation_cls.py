@@ -855,7 +855,7 @@ if __name__ == "__main__":
         --target_split_pred all \
         --save_tag TaPa_Ens_
     
-    ###  Table-4 (#3 Ens)   OpenVocRelCls_stage2_GroupedRandom
+    ###  Table-4 (#4 Rand)   OpenVocRelCls_stage2_GroupedRandom
     TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=3 python tools/eval_relation_cls.py \
         --pred_cls_split_info_path configs/VidVRD_pred_class_spilt_info_v2.json \
         --model_class OpenVocRelCls_stage2_GroupedRandom  \
