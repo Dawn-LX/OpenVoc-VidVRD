@@ -386,7 +386,7 @@ class VidVRDUnifiedDataset(object):
     def __init__(self,
         dataset_splits,
         enti_cls_spilt_info_path = "/home/gkf/project/VidVRD-OpenVoc/configs/VidVRD_class_spilt_info.json",
-        pred_cls_split_info_path = "/home/gkf/project/VidVRD-OpenVoc/configs/VidVRD_pred_class_spilt_info.json",  # not used for test
+        pred_cls_split_info_path = "xxx",  # not used for test
         dataset_dir = "/home/gkf/project/VidVRD_VidOR/vidvrd-dataset",
         traj_info_dir = "/home/gkf/project/VidVRD-II/tracklets_results/VidVRD_segment30_tracking_results",  # all 1000 videos
         traj_features_dir = "/home/gkf/project/scene_graph_benchmark/output/VidVRD_traj_features_seg30", # 2048-d RoI feature
@@ -461,7 +461,7 @@ class VidVRDUnifiedDataset(object):
                 with open(path_,'rb') as f:
                     assigned_labels = pickle.load(f)
             else:
-                print("no cache file found, assigning labels...")
+                print(f"no cache file found, assigning labels..., {path_}")
                 assigned_labels = self.label_assignment()
                 with open(path_,'wb') as f:
                     pickle.dump(assigned_labels,f)
@@ -880,10 +880,150 @@ class VidVRDUnifiedDataset(object):
         TODO FIXME write this func in a multi-process manner
         currently we use `class VidVRDUnifiedDatasetForLabelAssign` 
         and wrap it using torch's DataLoader to assign label in a multi-process manner 
+        refer to  "tools/VidVRD_label_assignment.py"
         '''
-        print("please use `class VidVRDUnifiedDatasetForLabelAssign` to pre-assign label and save as cache")
+        print("please use `tools/VidVRD_label_assignment.py` to pre-assign label and save as cache")
         raise NotImplementedError
+
+        import multiprocessing
+
+        ids_list = list(range(len(self.segment_tags)))
+
+        p= multiprocessing.Pool(8)
         
+        assigned_labels = dict()
+        count = 0
+        for results in (pbar := tqdm(
+            p.imap(self._getitem_for_assign_label, ids_list),
+            total=len(ids_list)
+        )):  # RuntimeError: unable to mmap 960 bytes from file </torch_31123_868227000_64317>: Cannot allocate memory (12)
+            # Why ?????
+            seg_tag,assigned_pred_labels,assigned_so_labels,mask = results
+            num_pos_pair = mask.sum()
+            if num_pos_pair > 0:
+                count+=1
+
+            assigned_labels[seg_tag] = {
+                "predicate": assigned_pred_labels,
+                "entity":assigned_so_labels
+            }
+
+        p.close()
+        p.join()
+        
+        return assigned_labels
+
+
+    def _getitem_for_assign_label(self, idx):
+        '''
+        NOTE at this step, all segments have label, we have filtered out segments without label
+        TODO use traj_cls_split = ("base",) to filter
+        '''
+        seg_tag = self.segment_tags[idx]
+        video_name, seg_fs, seg_fe = seg_tag.split('-')  # e.g., "ILSVRC2015_train_00010001-0016-0048"
+        seg_fs,seg_fe = int(seg_fs),int(seg_fe)
+        gt_traj_info = self.gt_traj_infos[seg_tag]
+        
+        ## 1. construct gt traj pair
+        gt_triplets = defaultdict(list)
+        relations = self.video_annos[video_name]["relation_instances"]
+        trajid2cls_map = {traj["tid"]:traj["category"] for traj in self.video_annos[video_name]["subject/objects"]}
+        # e.g., {0: 'bicycle', 1: 'bicycle', 2: 'person', 3: 'person', 5: 'person'} # not necessarily continuous
+        
+        # after `self.filter_segments()`, each segment at least has 1 base class sampel
+        # BUT can also have novel samples
+        for rel in relations: 
+            s_tid,o_tid = rel["subject_tid"],rel["object_tid"]
+            s_cls,o_cls = trajid2cls_map[s_tid],trajid2cls_map[o_tid]
+            s_split,o_split = self.enti_cls2split[s_cls],self.enti_cls2split[o_cls]
+            p_cls = rel["predicate"]
+            if not ((s_split in self.traj_cls_splits) and (o_split in self.traj_cls_splits)):
+                continue
+            if not (self.pred_cls2split[p_cls] in self.pred_cls_splits):
+                continue           
+            fs,fe =  rel["begin_fid"],rel["end_fid"]  # [fs,fe)  fe is exclusive (from annotation)
+            if not (seg_fs <= fs and fe <= seg_fe):  # we only select predicate that within this segment
+                continue
+            assert seg_fs == fs and seg_fe == fe
+            assert (s_tid in gt_traj_info.keys()) and (o_tid in gt_traj_info.keys()) 
+            
+            gt_triplets[(s_tid,o_tid)].append((s_cls,p_cls,o_cls))
+        assert len(gt_triplets) > 0
+
+        gt_s_trajs = []
+        gt_o_trajs = []
+        gt_s_fstarts = []
+        gt_o_fstarts = []
+        gt_pred_vecs = []
+        gt_so_clsids = []
+        for k,spo_cls_list in gt_triplets.items(): # loop for traj pair
+            s_tid,o_tid = k
+            pred_list = [spo_cls[1] for spo_cls in spo_cls_list]
+            s_cls,o_cls = spo_cls_list[0][0],spo_cls_list[0][2]
+            gt_so_clsids.append(
+                [self.enti_cls2id[s_cls],self.enti_cls2id[o_cls]]
+            )
+
+            s_traj = gt_traj_info[s_tid]
+            o_traj = gt_traj_info[o_tid]
+            s_fs = s_traj["fstarts"]  # w.r.t the whole video
+            o_fs = o_traj["fstarts"]
+            s_boxes = s_traj["bboxes"]
+            o_boxes = o_traj["bboxes"]
+            assert len(s_boxes) == 30 and len(o_boxes) == 30 and s_fs == seg_fs and o_fs == seg_fs
+            multihot = torch.zeros(size=(self.pred_num_base+self.pred_num_novel+1,))  # (num_pred_cls,) n_base+n_novel+1, including background
+            for pred in pred_list:
+                p_cls_id = self.pred_cls_split_info["cls2id"][pred]
+                multihot[p_cls_id] = 1
+            
+
+            
+            gt_s_trajs.append(s_boxes)
+            gt_o_trajs.append(o_boxes)
+            gt_s_fstarts.append(s_fs - seg_fs) # w.r.t the segment
+            gt_o_fstarts.append(o_fs - seg_fs) 
+            gt_pred_vecs.append(multihot)
+        gt_s_fstarts = torch.as_tensor(gt_s_fstarts)  # (n_gt_pair,)
+        gt_o_fstarts = torch.as_tensor(gt_o_fstarts)
+        gt_pred_vecs = torch.stack(gt_pred_vecs,dim=0) # (n_gt_pair,num_pred_cats)  # for multi-label classification
+        gt_so_clsids = torch.as_tensor(gt_so_clsids)   # (n_gt_pair,2)
+        n_gt_pair = gt_pred_vecs.shape[0]
+
+        ## 2. construct det traj pair
+
+        det_traj_info = self.det_traj_infos[seg_tag]
+        det_trajs = det_traj_info["bboxes"]    # list[tensor] , len == n_det, each shape == (num_boxes, 4)
+        det_fstarts = det_traj_info["fstarts"]  # (n_det,)
+        pair_ids = trajid2pairid(len(det_trajs))  # (n_pair,2)  n_pair == n_det*(n_det-1)
+        s_ids = pair_ids[:,0]  # (n_pair,)
+        o_ids = pair_ids[:,1]
+
+        det_s_fstarts = det_fstarts[s_ids]
+        det_o_fstarts = det_fstarts[o_ids]
+        det_s_trajs = [det_trajs[idx] for idx in s_ids]
+        det_o_trajs = [det_trajs[idx] for idx in o_ids]
+
+        ## 3. calculate vPoI and assign label
+        # gt_s_trajs_len = [len(x) for x in gt_s_trajs]
+        # print(gt_s_trajs_len,"gt_s_trajs_len")
+        vpoi_s = vPoI_broadcast(det_s_trajs,gt_s_trajs,det_s_fstarts,gt_s_fstarts)  # (n_pair, n_gt_pair)  # 
+        vpoi_o = vPoI_broadcast(det_o_trajs,gt_o_trajs,det_o_fstarts,gt_o_fstarts)  # (n_pair, n_gt_pair)
+        vpoi_mat = torch.minimum(vpoi_s,vpoi_o)
+
+        max_vpois,gt_pair_ids = torch.max(vpoi_mat,dim=-1)  # (n_pair,)
+        # for each traj_pair, assign the gt_pair that has the max vPoI to it.
+        mask = max_vpois > self.vpoi_th  # (n_pair, )
+        assigned_pred_labels = gt_pred_vecs[gt_pair_ids,:]  # (n_pair,num_pred_cats)
+        assigned_so_labels = gt_so_clsids[gt_pair_ids,:]    # (n_pair,2)
+
+        assigned_pred_labels[~mask,:] = 0  # first, set background target as all-zero vectors (overwrite other multihot vectors)
+        assigned_pred_labels[~mask,0] = 1  # then set these all-zero vectors as [1,0,0,...,0]  
+
+
+
+        return seg_tag,assigned_pred_labels,assigned_so_labels,mask
+
+
 class VidVRDUnifiedDatasetForLabelAssign(VidVRDUnifiedDataset):
 
     def __init__(self, **kargs):
@@ -959,7 +1099,7 @@ class VidVRDUnifiedDatasetForLabelAssign(VidVRDUnifiedDataset):
         
         ## 1. construct gt traj pair
         gt_triplets = defaultdict(list)
-        relations = deepcopy(self.video_annos[video_name]["relation_instances"])
+        relations = self.video_annos[video_name]["relation_instances"]
         trajid2cls_map = {traj["tid"]:traj["category"] for traj in self.video_annos[video_name]["subject/objects"]}
         # e.g., {0: 'bicycle', 1: 'bicycle', 2: 'person', 3: 'person', 5: 'person'} # not necessarily continuous
         
