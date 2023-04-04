@@ -121,6 +121,9 @@ if __name__ == "__main__":
     #     traj_cls_splits = ("base","novel")
     # )
     '''
+    !!!!!! NOTE export the path environment variable first
+    export PYTHONPATH=$PYTHONPATH:"/your_project_path/" (e.g., "/home/username/OpenVoc-VidVRD")
+
     python tools/VidVRD_label_assignment.py \
         --traj_len_th 15 \
         --min_region_th 5 \

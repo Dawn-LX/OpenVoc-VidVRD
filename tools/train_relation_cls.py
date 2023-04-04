@@ -654,6 +654,9 @@ if __name__ == "__main__":
         )
 
     '''
+    !!!!!! NOTE export the path environment variable first
+    export PYTHONPATH=$PYTHONPATH:"/your_project_path/" (e.g., "/home/username/OpenVoc-VidVRD")
+
     ################################ Table-2 ######################################
     ### Table-2 (RePro with both base and novel training data) (RePro_both_BaseNovel_training)
         # stage-1  (A-100 24G memory, 50 epochs total 3.5 hour)

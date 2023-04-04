@@ -461,6 +461,9 @@ if __name__ == "__main__":
     # VidVRDTrajDataset
     
     '''
+    !!!!!! NOTE export the path environment variable first
+    export PYTHONPATH=$PYTHONPATH:"/your_project_path/" (e.g., "/home/username/OpenVoc-VidVRD")
+
     ### Table-1 Alpro OpenVocTrajCls_0BgEmb or OpenVocTrajCls_NoBgEmb either one is fine
     CUDA_VISIBLE_DEVICES=1 python tools/eval_traj_cls_both.py \
         --dataset_class VidVRDTrajDataset \

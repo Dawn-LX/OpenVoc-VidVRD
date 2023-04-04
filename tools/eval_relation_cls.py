@@ -749,6 +749,9 @@ if __name__ == "__main__":
     
 
     '''
+    !!!!!! NOTE export the path environment variable first
+    export PYTHONPATH=$PYTHONPATH:"/your_project_path/" (e.g., "/home/username/OpenVoc-VidVRD")
+
     ################################ Table-2 ######################################
     ### Table-2 (RePro with both base and novel training data) (RePro_both_BaseNovel_training)
     TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=1 python tools/eval_relation_cls.py \
