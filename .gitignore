@@ -45,5 +45,7 @@ data0*/
 pre-prepared_data/
 datasets/vidvrd-dataset/test/
 datasets/vidvrd-dataset/train/
+datasets/gt_jsons/*.json
+
 # notes:
 _*/
