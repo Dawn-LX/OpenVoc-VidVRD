@@ -464,7 +464,7 @@ if __name__ == "__main__":
     '''
     !!!!!! NOTE export the path environment variable first
     export PYTHONPATH=$PYTHONPATH:"/your_project_path/" (e.g., "/home/username/OpenVoc-VidVRD")
-
+    export PYTHONPATH=$PYTHONPATH:"/home/gaokaifeng/project/OpenVoc-VidVRD"
     ############################## VidVRD ##############################
 
     ### Table-1 Alpro OpenVocTrajCls_0BgEmb or OpenVocTrajCls_NoBgEmb either one is fine
@@ -520,5 +520,57 @@ if __name__ == "__main__":
         --save_tag with_distil_novel
     
     ############################## VidOR ##############################
+    
+    ### Table-1 Alpro OpenVocTrajCls_0BgEmb or OpenVocTrajCls_NoBgEmb either one is fine
+    CUDA_VISIBLE_DEVICES=1 python tools/eval_traj_cls_both.py \
+        --dataset_class VidORTrajDataset \
+        --model_class OpenVocTrajCls_0BgEmb \
+        --cfg_path  experiments/TrajCls_VidOR/0BgEmb/cfg_.py \
+        --eval_split novel \
+        --output_dir experiments/TrajCls_VidOR/ALPro \
+        --use_teacher \
+        --save_tag teacher_novel
+    
+    /home/gkf/project/ALPRO/extract_features_output/VidORval_TrajFeatures256
+
+    ### Table-1 RePro-#1 w/o Distil & w/o BgEmb OpenVocTrajCls_NoBgEmb
+    CUDA_VISIBLE_DEVICES=1 python tools/eval_traj_cls_both.py \
+        --dataset_class VidORTrajDataset \
+        --model_class OpenVocTrajCls_NoBgEmb \
+        --cfg_path   experiments/TrajCls_VidOR/NoBgEmb/cfg_.py \
+        --ckpt_path   experiments/TrajCls_VidOR/NoBgEmb/model_wo_distil_bs16_epoch_50.pth  \
+        --eval_split novel \
+        --output_dir   experiments/TrajCls_VidOR/NoBgEmb \
+        --save_tag wo_distil_novel
+    
+    ### Table-1 RePro-#2 w/o Distil & w/ BgEmb OpenVocTrajCls_0BgEmb
+    CUDA_VISIBLE_DEVICES=1 python tools/eval_traj_cls_both.py \
+        --dataset_class VidORTrajDataset \
+        --model_class OpenVocTrajCls_0BgEmb \
+        --cfg_path   experiments/TrajCls_VidOR/0BgEmb/cfg_.py \
+        --ckpt_path   experiments/TrajCls_VidOR/0BgEmb/model_wo_distil_bs16_epoch_50.pth  \
+        --eval_split novel \
+        --output_dir   experiments/TrajCls_VidOR/0BgEmb \
+        --save_tag wo_distil_novel
+    
+    ### Table-1 RePro-#3 w/ Distil & w/ BgEmb OpenVocTrajCls_0BgEmb
+    CUDA_VISIBLE_DEVICES=2 python tools/eval_traj_cls_both.py \
+        --dataset_class VidORTrajDataset \
+        --model_class OpenVocTrajCls_0BgEmb \
+        --cfg_path   experiments/TrajCls_VidOR/0BgEmb/cfg_.py \
+        --ckpt_path   experiments/TrajCls_VidOR/0BgEmb/model_with_distil_w5bs16_epoch_50.pth  \
+        --eval_split novel \
+        --output_dir   experiments/TrajCls_VidOR/0BgEmb \
+        --save_tag with_distil_novel
+    
+    ### Table-1 RePro-#4 w/ Distil & w/o BgEmb OpenVocTrajCls_NoBgEmb
+    CUDA_VISIBLE_DEVICES=1 python tools/eval_traj_cls_both.py \
+        --dataset_class VidORTrajDataset \
+        --model_class OpenVocTrajCls_NoBgEmb \
+        --cfg_path   experiments/TrajCls_VidOR/NoBgEmb/cfg_.py \
+        --ckpt_path   experiments/TrajCls_VidOR/NoBgEmb/model_with_distil_w5bs16_epoch_50.pth  \
+        --eval_split novel \
+        --output_dir   experiments/TrajCls_VidOR/NoBgEmb \
+        --save_tag with_distil_novel
     
     '''
