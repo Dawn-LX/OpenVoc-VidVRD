@@ -150,8 +150,7 @@ data0/
 
 ## VidOR
 
-NOTE for VidOR, we only use gt_bbox and gt_traj feature for training
-
+Pre-prepared traj data ([MEGA cloud link](https://mega.nz/folder/ddwDVTqZ#wvZ6DUklhLOnNL_1NBtwaQ)). It contains the following files:
 
 - traj bbox 
     - train gt: `data0/VidVRD-II/tracklets_results/VidORtrainVideoLevel_tracking_results_gt_th-15-5`
@@ -174,13 +173,21 @@ NOTE for VidOR, we only use gt_bbox and gt_traj feature for training
     - train det: `TODO` (is on ZJU-server)
     - val gt: `data0/ALPRO/extract_features_output/VidORval_TrajFeatures256_gt`
     - val det: `data0/ALPRO/extract_features_output/VidORval_TrajFeatures256`
+    
 
-NOTE: the det traj data (bbox & RoI features & embds) on train-set is only used for TrajCls module.
-For RelationCls module, we use gt traj data for traing. 
 
-Because: 1) The det_traj on train set is very dense and heavy, it cause too much computation resource. 
-2) The det_traj data contains many low quality samples (although after th-15-5 filtering)
-3) The VidOR's taining set is very large (7k videos), and the gt traj data is almost enough for training (unlike VidVRD which requires det data)
+- NOTEs:
+    
+    The det traj data (bbox & RoI features & embds) on train-set is only used for TrajCls module.
+    For RelationCls module, we use gt traj data for traing. 
 
-Using det_traj data  for further training supplementation will be leave as future work.
+    Because: 1) The det_traj on train set is very dense and heavy, it cause too much computation resource. 
+    2) The det_traj data contains many low quality samples (although after th-15-5 filtering)
+    3) The VidOR's taining set is very large (7k videos), and the gt traj data is almost enough for training (unlike VidVRD which requires det data)
 
+    Using det_traj data  for further training supplementation will be leave as future work.
+
+### Model Weights:
+
+- TrajCls Module: `TrajCls_VidOR.zip`, [here](https://mega.nz/file/wQZl0RRK#GMFw2Sh_2qBwX2qt1dD_WnbUtxP-kem4HcU6sK6ddiI)
+- RelationCls : TODO
