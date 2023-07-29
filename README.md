@@ -12,75 +12,9 @@ Official code for our ICLR2023 paper: "Compositional Prompt Tuning with Motion C
 - transformers == 4.11.3 (new version might require some modifications for ALpro's code, but also works， refer to Line 872 in `Alpro_modeling/xbert.py`) 
 - for other basic packages, just run the project and download whatever needed.
 
-# Trajectory Classification Module
-## Train
-refer to `tools/train_traj_cls_both.py` for both VidVRD & VidOR datasets, e.g., 
-```
-export PYTHONPATH=$PYTHONPATH:"/your/path/OpenVoc-VidVRD/"
-```
-```
-    CUDA_VISIBLE_DEVICES=3 python tools/train_traj_cls_both.py \
-        --dataset_class VidVRDTrajDataset \
-        --model_class OpenVocTrajCls_NoBgEmb \
-        --cfg_path experiments/TrajCls_VidVRD/NoBgEmb/cfg_.py \
-        --output_dir experiments/TrajCls_VidVRD/NoBgEmb \
-        --save_tag bs128
-```
-## Test
-refer to `tools/eval_traj_cls_both.py`, e.g.,
-```
-    CUDA_VISIBLE_DEVICES=1 python tools/eval_traj_cls_both.py \
-        --dataset_class VidVRDTrajDataset \
-        --model_class OpenVocTrajCls_NoBgEmb \
-        --cfg_path   experiments/TrajCls_VidVRD/NoBgEmb/cfg_.py \
-        --ckpt_path  experiments/TrajCls_VidVRD/NoBgEmb/model_final_wo_distil_bs128_epoch_50.pth \
-        --eval_split novel \
-        --output_dir experiments/TrajCls_VidVRD/NoBgEmb  \
-        --save_tag wo_distil_novel
-```
+# Data-release summarize
 
-# RelationCls Module (VidVRD dataset)
-## 1. label assignment
-refer to `tools/VidVRD_label_assignment.py`
-```
-python tools/VidVRD_label_assignment.py \
-        --traj_len_th 15 \
-        --min_region_th 5 \
-        --vpoi_th 0.9 \
-        --cache_tag PredSplit_v2_FullySupervise \
-        --is_save
-```
-
-## 2. Train
-e.g., refer to `tools/train_relation_cls.py` for other settings (ablation studies)
-```
-### Table-2 (RePro with both base and novel training data) (RePro_both_BaseNovel_training)
-    # stage-1  (A-100 24G memory, 50 epochs total 3.5 hour)
-    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=1 python tools/train_relation_cls.py \
-        --use_gt_only_data \
-        --model_class AlproPromptTrainer_Grouped \
-        --train_dataset_class VidVRDGTDatasetForTrain_GIoU \
-        --eval_dataset_class VidVRDUnifiedDataset_GIoU \
-        --cfg_path  experiments/RelationCls_VidVRD/RePro_both_BaseNovel_training/stage1/cfg_.py \
-        --output_dir experiments/RelationCls_VidVRD/RePro_both_BaseNovel_training/stage1/ \
-        --eval_split_traj all \
-        --eval_split_pred all \
-        --save_tag bsz32
-    
-    # stage-2  (A-100 15G, (about 14791 M), 50 epochs total 2.5 hour )  
-    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=0 python tools/train_relation_cls.py \
-        --model_class OpenVocRelCls_stage2_Grouped \
-        --train_dataset_class VidVRDUnifiedDataset_GIoU \
-        --eval_dataset_class VidVRDUnifiedDataset_GIoU \
-        --cfg_path experiments/RelationCls_VidVRD/RePro_both_BaseNovel_training/stage2/cfg_.py \
-        --output_dir experiments/RelationCls_VidVRD/RePro_both_BaseNovel_training/stage2/ \
-        --save_tag bsz32
-```
-
-## 3. Test
-refer to `tools/eval_relation_cls.py` for different test settings
-
-# data-release summarize
+Actually, the raw video data (.mp4 files) is not required to run this repo. We provide the pre-prepared traj data (include bbox and features)
 
 **Overview**: There are 3 types of data
 - tacklet bbox (or traj bbox): bounding box sequence after object tracking. 
@@ -94,6 +28,7 @@ refer to `tools/eval_relation_cls.py` for different test settings
 For each type of the above data, it includes `gt` and `det`, i.e., ground-truth traj bboxes and detection traj bboxes, with their features/embds. (certainly, we don't need Seq-NMS to perform tracking for `gt`)
 
 ## VidVRD
+
 ### Pre-prepared traj data ([MEGA cloud link](https://mega.nz/folder/AYBkxCaI#QCqV3cnIdY_9DXGUnCtSvA))
 
 In detail, there are the following files: (where `data0/` refers to `/home/gkf/project/`)
@@ -117,6 +52,8 @@ In detail, there are the following files: (where `data0/` refers to `/home/gkf/p
     - gt (200 test videos):  `vidvrd_traj_emb_gt.zip`, c.t. `data0/ALPRO/extract_features_output/VidVRDtest_seg30_TrajFeatures256_gt`
     - gt (800 train videos): `vidvrd_traj_emb_gt_trainset.zip`, c.t. `data0/ALPRO/extract_features_output/vidvrd_seg30_TrajFeatures256_gt`
     - det (all 1k videos):  `vidvrd_traj_emb_det.zip`, c.t. `data0/ALPRO/extract_features_output/vidvrd_seg30_TrajFeatures256`
+
+Download the above data and format as, e.g.,  
 
 ```
 data0/
@@ -149,6 +86,8 @@ data0/
 - RelationCls module: `RelationCls_VidVRD.zip` ([here](https://mega.nz/file/sExTGJQK#gHEovg3bYxGptsar7AQZipS64QjadI0zT_58SrHwOKE))
 
 ## VidOR
+
+We backup the video data [here](https://mega.nz/folder/wc5hgQKb#EnAOx4ZCva9GdErOMYim6w) in case the official link not work.
 
 Pre-prepared traj data ([MEGA cloud link](https://mega.nz/folder/ddwDVTqZ#wvZ6DUklhLOnNL_1NBtwaQ)). It contains the following files:
 
@@ -191,3 +130,65 @@ Pre-prepared traj data ([MEGA cloud link](https://mega.nz/folder/ddwDVTqZ#wvZ6DU
 
 - TrajCls Module: `TrajCls_VidOR.zip`, [here](https://mega.nz/file/wQZl0RRK#GMFw2Sh_2qBwX2qt1dD_WnbUtxP-kem4HcU6sK6ddiI)
 - RelationCls : TODO
+
+
+# Trajectory Classification Module
+**First add the env path**: 
+```export PYTHONPATH=$PYTHONPATH:"/your/path/OpenVoc-VidVRD/"```
+
+## Train
+refer to the commands in `tools/train_traj_cls_both.py`, for both VidVRD & VidOR datasets, e.g., 
+```
+    CUDA_VISIBLE_DEVICES=3 python tools/train_traj_cls_both.py \
+        --dataset_class VidVRDTrajDataset \
+        --model_class OpenVocTrajCls_NoBgEmb \
+        --cfg_path experiments/TrajCls_VidVRD/NoBgEmb/cfg_.py \
+        --output_dir experiments/TrajCls_VidVRD/NoBgEmb \
+        --save_tag bs128
+```
+
+## Test
+refer to the commands in `tools/eval_traj_cls_both.py`
+
+
+# RelationCls Module (VidVRD dataset)
+## 1) label assignment
+refer to the commands in `tools/VidVRD_label_assignment.py`, e.g., 
+```
+python tools/VidVRD_label_assignment.py \
+        --traj_len_th 15 \
+        --min_region_th 5 \
+        --vpoi_th 0.9 \
+        --cache_tag PredSplit_v2_FullySupervise \
+        --is_save
+```
+
+## 2) Train
+e.g., refer to the commands in `tools/train_relation_cls.py` for other settings (ablation studies)
+```
+### Table-2 (RePro with both base and novel training data) (RePro_both_BaseNovel_training)
+    # stage-1  (A-100 24G memory, 50 epochs total 3.5 hour)
+    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=1 python tools/train_relation_cls.py \
+        --use_gt_only_data \
+        --model_class AlproPromptTrainer_Grouped \
+        --train_dataset_class VidVRDGTDatasetForTrain_GIoU \
+        --eval_dataset_class VidVRDUnifiedDataset_GIoU \
+        --cfg_path  experiments/RelationCls_VidVRD/RePro_both_BaseNovel_training/stage1/cfg_.py \
+        --output_dir experiments/RelationCls_VidVRD/RePro_both_BaseNovel_training/stage1/ \
+        --eval_split_traj all \
+        --eval_split_pred all \
+        --save_tag bsz32
+    
+    # stage-2  (A-100 15G, (about 14791 M), 50 epochs total 2.5 hour )  
+    TOKENIZERS_PARALLELISM=false CUDA_VISIBLE_DEVICES=0 python tools/train_relation_cls.py \
+        --model_class OpenVocRelCls_stage2_Grouped \
+        --train_dataset_class VidVRDUnifiedDataset_GIoU \
+        --eval_dataset_class VidVRDUnifiedDataset_GIoU \
+        --cfg_path experiments/RelationCls_VidVRD/RePro_both_BaseNovel_training/stage2/cfg_.py \
+        --output_dir experiments/RelationCls_VidVRD/RePro_both_BaseNovel_training/stage2/ \
+        --save_tag bsz32
+```
+
+## 3) Test
+refer to `tools/eval_relation_cls.py` for different test settings
+
