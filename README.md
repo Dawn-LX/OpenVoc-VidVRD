@@ -106,11 +106,13 @@ In detail, there are the following files: (where `data0/` refers to `/home/gkf/p
     - det (all 1k videos):  `vidvrd_traj_box_det.zip`, c.t. `data0/VidVRD-II/tracklets_results/VidVRD_segment30_tracking_results`
     - det-th-15-5 (all 1k videos):  `vidvrd_traj_box_det_th-15-5.zip`, c.t. `data0/VidVRD-OpenVoc/vidvrd_traj_box_det_th-15-5.zip`
         - this is used for TrajCls module only, it can be obtained by filter out trajs with length < 15 and area < 5, but we also provide this data to make sure.
+
 - traj RoI features (2048-d)
     - gt (200 test videos): `vidvrd_traj_roi_gt.zip`, c.t. `data0/scene_graph_benchmark/output/VidVRDtest_gt_traj_features_seg30`
     - gt (800 train videos): `vidvrd_traj_roi_gt_trainset`, c.t. `data0/scene_graph_benchmark/output/VidVRD_gt_traj_features_seg30`
     - det: (all 1k videos) `vidvrd_traj_roi_det.zip`, c.t. `data0/scene_graph_benchmark/output/VidVRD_traj_features_seg30`
     - det-th-15-5: (all 1k videos) `vidvrd_traj_roi_det_th-15-5.zip`, c.t. `data0/scene_graph_benchmark/output/VidVRD_traj_features_seg30_th-15-5`
+
 - traj embds (256-d, and these are all filtered by th-15-5)
     - gt (200 test videos):  `vidvrd_traj_emb_gt.zip`, c.t. `data0/ALPRO/extract_features_output/VidVRDtest_seg30_TrajFeatures256_gt`
     - gt (800 train videos): `vidvrd_traj_emb_gt_trainset.zip`, c.t. `data0/ALPRO/extract_features_output/vidvrd_seg30_TrajFeatures256_gt`
@@ -149,3 +151,36 @@ data0/
 ## VidOR
 
 NOTE for VidOR, we only use gt_bbox and gt_traj feature for training
+
+
+- traj bbox 
+    - train gt: `data0/VidVRD-II/tracklets_results/VidORtrainVideoLevel_tracking_results_gt_th-15-5`
+    - train det: `TODO` (is uploading to OneDrive)
+    - val gt: `data0/VidVRD-II/tracklets_results/VidORvalVideoLevel_tracking_results_gt`
+    - val det: `data0/VidVRD-II/tracklets_results/VidORvalVideoLevel_tracking_results_th-15-5`
+    
+    NOTE: for traj_gt on val set, it is for eval on SGCls & PredCls, and it's not filtered by th-15-5 (in order to get high recall). 
+    for traj on train set (both det & gt), we apply th-15-5 filtering to get high quality training samples. (same as bellow)
+
+- traj RoI features (2048-d)
+    - train gt: `data0/scene_graph_benchmark/output/VidORtrain_gt_traj_features_th-15-5`
+    - train det: `TODO` (is compressing on ZJU-server)
+    - val gt: `data0/scene_graph_benchmark/output/VidORval_gt_traj_features`
+    - val det: `data0/scene_graph_benchmark/output/VidORval_traj_features_th-15-5`
+
+
+- traj embds (256-d)
+    - train gt: `data0/ALPRO/extract_features_output/VidOR_TrajFeatures256_gt_th-15-5`
+    - train det: `TODO` (is on ZJU-server)
+    - val gt: `data0/ALPRO/extract_features_output/VidORval_TrajFeatures256_gt`
+    - val det: `data0/ALPRO/extract_features_output/VidORval_TrajFeatures256`
+
+NOTE: the det traj data (bbox & RoI features & embds) on train-set is only used for TrajCls module.
+For RelationCls module, we use gt traj data for traing. 
+
+Because: 1) The det_traj on train set is very dense and heavy, it cause too much computation resource. 
+2) The det_traj data contains many low quality samples (although after th-15-5 filtering)
+3) The VidOR's taining set is very large (7k videos), and the gt traj data is almost enough for training (unlike VidVRD which requires det data)
+
+Using det_traj data  for further training supplementation will be leave as future work.
+
