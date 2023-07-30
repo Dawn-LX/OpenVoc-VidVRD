@@ -267,17 +267,17 @@ class VidORTrajDataset(object):
         
         if self.dataset_split == "train":
             # fix this, TODO : load video-level .json and get segment_tags_all
-            tmp = "/home/gkf/project/VidVRD-II/tracklets_results/VidORtrain_tracking_results_th-15-5"  
+            # tmp = "/home/gkf/project/VidVRD-II/tracklets_results/VidORtrain_tracking_results_th-15-5"  
+            _videoname2seg = load_json("data0/VidVRD-II/tracklets_results/VidORtrain_video2seg.json")
         else:
-            tmp = "/home/gkf/project/VidVRD-II/tracklets_results/VidORval_tracking_results_th-15-5"
-        video2seg = defaultdict(list)
+            _videoname2seg = load_json("data0/VidVRD-II/tracklets_results/VidORval_video2seg.json")
+        
+        video2seg = dict()
         segment_tags_all = []
         for video_name in video_names_all:
-            seg_filenames = sorted(os.listdir(os.path.join(tmp,video_name)))
-            for filename in seg_filenames:
-                seg_tag = filename.split('.')[0] # e.g., 1010_8872539414-0825-0855
-                segment_tags_all.append(seg_tag)
-                video2seg[video_name].append(seg_tag)
+            seg_tags = _videoname2seg[video_name]
+            segment_tags_all.extend(seg_tags)
+            video2seg[video_name] = seg_tags
                 
 
         seg2relidx = dict()
@@ -296,31 +296,42 @@ class VidORTrajDataset(object):
         self.segment_tags_all = segment_tags_all
 
     def get_traj_infos(self,video_name,segment_tags,rt_ntrajs_only=True):
-        # we have filter originally saved tracking results,
-        # refer to func:`filter_track_res_and_feature` in `/home/gkf/project/VidVRD-II/video_object_detection/object_bbox2traj_segment.py`
         '''
-        tracking_results = {seg_tag1:res_1,seg_tag2:res_2,...,"n_trajs":[16,15,24,0,14,...]}
-        res_i = [
-            {
-                'fstarts': int(fstart),     # relative frame idx w.r.t this segment
-                'score': score,             # -1 for gt
-                'bboxes': bboxes.tolist()   # list[list], len == num_frames, format xyxy
+        Parameters:
+            video_name (str): e.g., "0001_2793806282"
+            segment_tags (str): For label-assignment, all segment tags of this video; For training only sampled segments
 
-                ### for det traj
-                'label':  cls_id            # int, w.r.t VinVL classes
+        Returns:
+            traj_infos,n_trajs,n_trajs_b4sp.
                 
-                #### for gt_traj in train-set
-                'class':  class_name        # str    
-                'tid':tid                   # int, original tid in annotation (w.r.t video range)
-                
-            },
-            ...
-        ]  # len(res_i) == num_tracklets
+        we have filter originally saved tracking results,
+        refer to func:`filter_track_res_and_feature` in `/home/gkf/project/VidVRD-II/video_object_detection/object_bbox2traj_segment.py`
         '''
+        
+        
         
         path = os.path.join(self.tracking_res_dir,video_name+".json")
         with open(path,'r') as f:
             tracking_results = json.load(f)
+            '''
+            tracking_results = {seg_tag1:res_1,seg_tag2:res_2,...,"n_trajs":[16,15,24,0,14,...]}
+            res_i = [
+                {
+                    'fstarts': int(fstart),     # relative frame idx w.r.t this segment
+                    'score': score,             # -1 for gt
+                    'bboxes': bboxes.tolist()   # list[list], len == num_frames, format xyxy
+
+                    ### for det traj
+                    'label':  cls_id            # int, w.r.t VinVL classes
+                    
+                    #### for gt_traj in train-set
+                    'class':  class_name        # str    
+                    'tid':tid                   # int, original tid in annotation (w.r.t video range)
+                    
+                },
+                ...
+            ]  # len(res_i) == num_tracklets
+            '''
 
         rel_ids = [self.seg2relidx[seg_tag] for seg_tag in segment_tags]
         n_trajs_b4sp = tracking_results["n_trajs"]  # `b4sp` means before sample
@@ -409,7 +420,9 @@ class VidORTrajDataset(object):
 
 
     def get_annos(self,video_name,segment_tags):
-    
+        '''
+        this func will be used for 1) label assignment, traj annos of train set; 2) eval TrajCls results, traj annos of val set
+        '''
         # LOGGER.info("preparing annotations for data_split: {}, class_splits: {} ".format(self.dataset_split,self.class_splits))
 
 
@@ -563,10 +576,10 @@ class VidORTrajDataset(object):
     def label_assignment(self):
         '''
         TODO FIXME write this func in a multi-process manner
-        currently we use `class VidVRDUnifiedDatasetForLabelAssign` 
+        currently we use `class VidORTrajDataset_ForAssignLabels` 
         and wrap it using torch's DataLoader to assign label in a multi-process manner 
         '''
-        LOGGER.info("please use `class VidVRDUnifiedDatasetForLabelAssign` to pre-assign label and save as cache")
+        LOGGER.info("please use `class VidORTrajDataset_ForAssignLabels` to pre-assign label and save as cache, refer to tools/VidOR_label_assignment.py")
         raise NotImplementedError
 
 
@@ -576,39 +589,69 @@ class VidORTrajDataset_ForAssignLabels(VidORTrajDataset):
         super().__init__(**kargs)
     
     def __getitem__(self, idx):
-
-        seg_tag = self.segment_tags[idx]   # return seg_tag for debug
         
-        det_info = self.traj_infos[seg_tag]
-        det_trajs = det_info["bboxes"]    # list[tensor] , len== n_det, each shape == (num_boxes, 4)
-        # this can be empty list
-        if len(det_trajs) == 0:
-            return deepcopy(seg_tag),None
-        det_fstarts = det_info["fstarts"]  # (n_det,)
+        video_name = self.video_names[idx]  # return video_name for debug
+        segment_tags  = self.video2seg[video_name]
 
-        gt_anno = self.traj_annos[seg_tag]
-        if gt_anno is None:
-            return deepcopy(seg_tag),None
+        traj_infos,n_trajs,_ = self.get_traj_infos(video_name,segment_tags,rt_ntrajs_only=False)
+        traj_annos = self.get_annos(video_name,segment_tags)
+        '''
+        traj_infos = [{
+                "fstarts":torch.as_tensor(fstarts), # shape == (n_det,)
+                "scores":torch.as_tensor(scores),  # shape == (n_det,)
+                "bboxes":bboxes,  # list[tensor] , len== n_det, each shape == (num_boxes, 4) 1025_11664231455
+                # "VinVL_clsids":torch.as_tensor(cls_ids),  # shape == (n_det,)
+            },
+            ...
+        ]
+        traj_annos = [{
+                "labels":labels,    # shape == (num_traj,)
+                "fstarts":fstarts,  # shape == (num_traj,)
+                "bboxes":bboxes,    # len==num_traj, each shape == (num_bboxes,4)
+            },
+            ...
+        ]
+        '''
+        assert len(segment_tags) == len(traj_infos)
+        assert len(traj_infos) == len(traj_annos)
 
-        gt_trajs = gt_anno["bboxes"]      # list[tensor] , len== n_gt,  each shape == (num_boxes, 4)
-        gt_fstarts = gt_anno["fstarts"]   # (n_gt,)
-        gt_labels = gt_anno["labels"]     # (n_gt,)
-        n_gt = len(gt_labels)
+        labels_per_video = []
+        for seg_tag,det_info,gt_anno in zip(segment_tags,traj_infos,traj_annos):
 
-        viou_matrix = vIoU_broadcast(det_trajs,gt_trajs,det_fstarts,gt_fstarts)  # (n_det, n_gt)
+            det_info = traj_infos[seg_tag]
+            det_trajs = det_info["bboxes"]    # list[tensor] , len== n_det, each shape == (num_boxes, 4)
+            # this can be empty list
+            if len(det_trajs) == 0:
+                labels_per_video.append(None)
+                continue
 
-        try:
+            det_fstarts = det_info["fstarts"]  # (n_det,)
+            gt_anno = self.traj_annos[seg_tag]
+            if gt_anno is None:
+                labels_per_video.append(None)
+                continue
+
+            gt_trajs = gt_anno["bboxes"]      # list[tensor] , len== n_gt,  each shape == (num_boxes, 4)
+            gt_fstarts = gt_anno["fstarts"]   # (n_gt,)
+            gt_labels = gt_anno["labels"]     # (n_gt,)
+            n_gt = len(gt_labels)
+
+            viou_matrix = vIoU_broadcast(det_trajs,gt_trajs,det_fstarts,gt_fstarts)  # (n_det, n_gt)
+
+            # try:
             max_vious, gt_ids = torch.max(viou_matrix,dim=-1)  # shape == (n_det,)
-        except:
-            print(seg_tag,det_info)
-            print(det_trajs)
-            print(viou_matrix.shape)
-        mask = max_vious > self.vIoU_th
-        gt_ids[~mask] = n_gt
-        gt_labels_with_bg = torch.constant_pad_nd(gt_labels,pad=(0,1),value=0) # (n_gt+1,)
-        assigned_labels = gt_labels_with_bg[gt_ids]  # (n_det,)  range: 0~50, i.e., 0~base, 0 refers to __background__
+            # except:
+            #     print(seg_tag,det_info)
+            #     print(det_trajs)
+            #     print(viou_matrix.shape)
+            
+            mask = max_vious > self.vIoU_th
+            gt_ids[~mask] = n_gt
+            gt_labels_with_bg = torch.constant_pad_nd(gt_labels,pad=(0,1),value=0) # (n_gt+1,)
+            assigned_labels_per_seg = gt_labels_with_bg[gt_ids]  # (n_det,)  range: 0~50, i.e., 0~base, 0 refers to __background__
+            labels_per_video.append(assigned_labels_per_seg)
         
-        return deepcopy(seg_tag), assigned_labels
+        return segment_tags, labels_per_video
 
 
 ############ dataset for relation classification
