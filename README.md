@@ -147,6 +147,18 @@ refer to the commands in `tools/train_traj_cls_both.py`, for both VidVRD & VidOR
         --save_tag bs128
 ```
 
+**NOTE**:
+
+- We segment each video in to segments (30 frames each segment) with 15 frames overlap
+
+- For VidVRD, we assign labels in the `VidVRDTrajDataset`. And the dataloader's loop is w.r.t. segment
+
+- But for VidOR, , note that
+    - We pre-assign labels due to the large amount data (7k videos).
+    - We provide the assigned labe, and the video2seg maps (map each video name to it's segments) at [here](https://mega.nz/folder/MIZ0xbgC#wmgLc6Kn12dnb_jFTy_xEw)
+    - The dataloader for VidOR is loop w.r.t. video, and for each video, we random sample several segments.
+
+
 ## Test
 refer to the commands in `tools/eval_traj_cls_both.py`
 

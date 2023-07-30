@@ -133,7 +133,7 @@ def VidORtrain_LabelAssignment():
     n_trajs_per_seg = []
     for seg_tags,labels_per_video in tqdm(train_dataloader):
         num_seg_this_video = len(seg_tags)
-        assert num_seg_this_video == labels_per_video
+        assert num_seg_this_video == len(labels_per_video)
         for seg_tag,labels_per_seg in zip(seg_tags,labels_per_video):
 
             if labels_per_seg is None:
@@ -160,6 +160,7 @@ def VidORtrain_LabelAssignment():
     save_filename = "VidORtrain_DetTrajAssignedLabels_vIoU-{:.2f}_{}-{}.pth".format(vIoU_th,s,e)
     save_path = os.path.join(cache_dir,save_filename)
     torch.save(to_save,save_path)
+    print("assigned label saved at {}".format(save_path))
 
 
 
@@ -198,35 +199,20 @@ def merge_assigned_labels():
  
 if __name__ == "__main__":
     
-    # modify_seg_tag_idx([2000,3000])
-    #### vidor
+
     
     VidORtrain_LabelAssignment() 
+    # merge_assigned_labels()
    
     '''
     export PYTHONPATH=$PYTHONPATH:"/home/gaokaifeng/project/OpenVoc-VidVRD"
-    python tools/VidOR_label_assignment.py --sid 0 --eid 1000 --num_workers 8
 
-    # NOTE 对于VidOR traj label assignment， 
-    考古了一下，历史情况是这样的：我们在做完 LabelAssignment 之后， 重写了dataloader，（即写了 `dataset_vidor_v3.py`)
-    然后 TrajCls 的训练是基于dataset_vidor_v3的
-    
-    ############## 所以：
-    在assign label的时候，用的是所以：dataset_vidor_v2，他是 loop w.r.t seg 的，用的是每个segment 一个json的tracking results， 
-    assigned label results存的是所有seg的结果合在一起存为一个tensor的
+    python tools/VidOR_label_assignment.py --sid 0 --eid 7000 --num_workers 8
 
-    然后训练traj cls的时候（dataset_vidor_v3），用的是每个segment tracking results 合并之后的，即每个video 一个tracking results .json。
-    训练traj cls的时候，batch size 是w.r.t video, 然后每个video 都会采样几个segment。
-    
-    ##############
-    现在camera ready之后，我们只release 每个video 一个tracking results .json。
-    然后VidORtrain_LabelAssignment的代码就要改一下。
-    
+    Or  
+    assign label for each part, then use merge_assigned_labels() to merge all parts
+
+
     '''
-    # VidORGTDatasetForTrain_demo()
-    # demo_unique()
 
-    
-    # frame_range_stat()
-    # map_clsid_to_v2()
     

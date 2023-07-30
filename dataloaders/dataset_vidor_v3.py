@@ -618,19 +618,15 @@ class VidORTrajDataset_ForAssignLabels(VidORTrajDataset):
         labels_per_video = []
         for seg_tag,det_info,gt_anno in zip(segment_tags,traj_infos,traj_annos):
 
-            det_info = traj_infos[seg_tag]
+            
             det_trajs = det_info["bboxes"]    # list[tensor] , len== n_det, each shape == (num_boxes, 4)
             # this can be empty list
-            if len(det_trajs) == 0:
+            if (len(det_trajs) == 0) or (gt_anno is None):
                 labels_per_video.append(None)
                 continue
+
 
             det_fstarts = det_info["fstarts"]  # (n_det,)
-            gt_anno = self.traj_annos[seg_tag]
-            if gt_anno is None:
-                labels_per_video.append(None)
-                continue
-
             gt_trajs = gt_anno["bboxes"]      # list[tensor] , len== n_gt,  each shape == (num_boxes, 4)
             gt_fstarts = gt_anno["fstarts"]   # (n_gt,)
             gt_labels = gt_anno["labels"]     # (n_gt,)
