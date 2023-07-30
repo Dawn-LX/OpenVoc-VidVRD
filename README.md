@@ -157,7 +157,7 @@ refer to the commands in `tools/train_traj_cls_both.py`, for both VidVRD & VidOR
     - We pre-assign labels due to the large amount data (7k videos).
     - We provide the assigned labe, and the video2seg maps (map each video name to it's segments) at [here](https://mega.nz/folder/MIZ0xbgC#wmgLc6Kn12dnb_jFTy_xEw)
     - The dataloader for VidOR is loop w.r.t. video, and for each video, we random sample several segments.
-
+    - The label assignment code is provide at `tools/VidOR_label_assignment.py` for your reference.
 
 ## Test
 refer to the commands in `tools/eval_traj_cls_both.py`
