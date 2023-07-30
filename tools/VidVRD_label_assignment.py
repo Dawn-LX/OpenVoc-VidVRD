@@ -98,6 +98,8 @@ if __name__ == "__main__":
     
     # VidVRDUnifiedDatasetForLabelAssign_assign_label(traj_len_th,min_region_th,vpoi_th,cache_tag,is_save=True)
 
+    # NOTE: for TrajCLs label_assignment, refer func:`cls_label_assignment` in dataloaders/dataset_vidvrd_v2.py
+     
     # for traj-base & pred-base
     VidVRDUnifiedDatasetForLabelAssign_assign_label(
         traj_len_th,
