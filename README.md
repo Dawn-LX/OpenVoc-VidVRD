@@ -93,7 +93,7 @@ Pre-prepared traj data ([MEGA cloud link](https://mega.nz/folder/ddwDVTqZ#wvZ6DU
 
 - traj bbox 
     - train gt: `data0/VidVRD-II/tracklets_results/VidORtrainVideoLevel_tracking_results_gt_th-15-5`
-    - train det: `TODO` (is uploading to OneDrive)
+    - train det: `data0/VidVRD-II/tracklets_results/VidORtrainVideoLevel_tracking_results_th-15-5` (is unziping on SMU-server)
     - val gt: `data0/VidVRD-II/tracklets_results/VidORvalVideoLevel_tracking_results_gt`
     - val det: `data0/VidVRD-II/tracklets_results/VidORvalVideoLevel_tracking_results_th-15-5`
     
@@ -102,14 +102,14 @@ Pre-prepared traj data ([MEGA cloud link](https://mega.nz/folder/ddwDVTqZ#wvZ6DU
 
 - traj RoI features (2048-d)
     - train gt: `data0/scene_graph_benchmark/output/VidORtrain_gt_traj_features_th-15-5`
-    - train det: `TODO` (is compressing on ZJU-server)
+    - train det: `TODO` (is uploading to OneDrive) (80 G, TODO: divide it into 7 parts with 1k videos each)
     - val gt: `data0/scene_graph_benchmark/output/VidORval_gt_traj_features`
     - val det: `data0/scene_graph_benchmark/output/VidORval_traj_features_th-15-5`
 
 
 - traj embds (256-d)
     - train gt: `data0/ALPRO/extract_features_output/VidOR_TrajFeatures256_gt_th-15-5`
-    - train det: `TODO` (is on ZJU-server)
+    - train det: `/home/gkf/project/ALPRO/extract_features_output/VidOR_TrajFeatures256_th-15-5` (is uploading to OneDrive)
     - val gt: `data0/ALPRO/extract_features_output/VidORval_TrajFeatures256_gt`
     - val det: `data0/ALPRO/extract_features_output/VidORval_TrajFeatures256`
     
