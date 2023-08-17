@@ -27,6 +27,9 @@ Actually, the raw video data (.mp4 files) is not required to run this repo. We p
 
 For each type of the above data, it includes `gt` and `det`, i.e., ground-truth traj bboxes and detection traj bboxes, with their features/embds. (certainly, we don't need Seq-NMS to perform tracking for `gt`)
 
+## Code for prepare the above traj data
+Please refer to this repo [VidSGG-TrajDataPrepare](https://github.com/Dawn-LX/VidSGG-TrajDataPrepare) for how to prepare the above traj data.
+
 ## VidVRD
 
 ### Pre-prepared traj data ([MEGA cloud link](https://mega.nz/folder/AYBkxCaI#QCqV3cnIdY_9DXGUnCtSvA))
@@ -102,7 +105,7 @@ Pre-prepared traj data ([MEGA cloud link](https://mega.nz/folder/ddwDVTqZ#wvZ6DU
 
 - traj RoI features (2048-d)
     - train gt: `data0/scene_graph_benchmark/output/VidORtrain_gt_traj_features_th-15-5`
-    - train det: `TODO` (is uploading to OneDrive) (80 G, TODO: divide it into 7 parts with 1k videos each)
+    - train det: `data0/scene_graph_benchmark/output/VidORtrain_traj_features_th-15-5` [link](https://mega.nz/folder/0JQWkC6b#JiaqV82teEXvTaWiE_5YYg)
     - val gt: `data0/scene_graph_benchmark/output/VidORval_gt_traj_features`
     - val det: `data0/scene_graph_benchmark/output/VidORval_traj_features_th-15-5`
 
