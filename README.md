@@ -132,7 +132,7 @@ Pre-prepared traj data ([MEGA cloud link](https://mega.nz/folder/ddwDVTqZ#wvZ6DU
 ### Model Weights:
 
 - TrajCls Module: `TrajCls_VidOR.zip`, [here](https://mega.nz/file/wQZl0RRK#GMFw2Sh_2qBwX2qt1dD_WnbUtxP-kem4HcU6sK6ddiI)
-- RelationCls : TODO
+- RelationCls : refer to https://github.com/Dawn-LX/OpenVoc-VidVRD/issues/8#issuecomment-2060552033
 
 
 # Trajectory Classification Module
