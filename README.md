@@ -4,8 +4,7 @@ Official code for our ICLR2023 paper: "Compositional Prompt Tuning with Motion C
 
 # **[Update]** train & eval code for VidVRD dataset is ready
 
-# The code for VidOR's train & eval is still preparing .....
-
+# **[Update]** All traj data for VidOR has been released, for checkpoint, refer to [links in this issue](https://github.com/Dawn-LX/OpenVoc-VidVRD/issues/8#issuecomment-2103847250)
 # Requirements
 
 - Python == 3.7 or later, Pytorch == 1.7 or later
